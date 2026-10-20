@@ -1,0 +1,118 @@
+{
+  "protocol": "rdt-3.0",
+  "family": "rdt",
+  "title": "rdt 3.0",
+  "source": "Kurose & Ross, figuras 3.14 e 3.15",
+  "summary": "Bit alternante sobre canal com perdas e erros: ACKs numerados (sem NAK) e temporizador de contagem regressiva. Este arquivo foi escrito sem nenhuma linha de Go: usa o mesmo vocabulário do rdt 2.1.",
+  "machines": [
+    {
+      "name": "sender",
+      "title": "rdt 3.0 · remetente",
+      "initial": "WAIT_CALL_0",
+      "width": 680,
+      "height": 460,
+      "states": [
+        { "id": "WAIT_CALL_0", "label": "Espera chamada 0 de cima", "x": 170, "y": 110, "loop": "left" },
+        { "id": "WAIT_ACK_0", "label": "Espera ACK0", "x": 510, "y": 110, "loop": "right" },
+        { "id": "WAIT_CALL_1", "label": "Espera chamada 1 de cima", "x": 510, "y": 350, "loop": "right" },
+        { "id": "WAIT_ACK_1", "label": "Espera ACK1", "x": 170, "y": 350, "loop": "left" }
+      ],
+      "transitions": [
+        {
+          "from": "WAIT_CALL_0", "event": "rdt_send",
+          "actions": ["make_pkt(0)", "udt_send", "start_timer"],
+          "to": "WAIT_ACK_0",
+          "label": { "event": "rdt_send(data)", "action": "sndpkt = make_pkt(0, data, checksum)\nudt_send(sndpkt); start_timer" }
+        },
+        {
+          "from": "WAIT_CALL_0", "event": "rdt_rcv",
+          "to": "WAIT_CALL_0", "loop": "left",
+          "label": { "event": "rdt_rcv(rcvpkt)", "action": "Λ" }
+        },
+        {
+          "from": "WAIT_ACK_0", "event": "rdt_rcv", "guard": "corrupt || isACK1",
+          "to": "WAIT_ACK_0", "loop": "top",
+          "label": { "event": "rdt_rcv(rcvpkt) && (corrupt(rcvpkt) || isACK(rcvpkt,1))", "action": "Λ" }
+        },
+        {
+          "from": "WAIT_ACK_0", "event": "timeout",
+          "actions": ["udt_send", "start_timer"],
+          "to": "WAIT_ACK_0", "loop": "right",
+          "label": { "event": "timeout", "action": "udt_send(sndpkt); start_timer" }
+        },
+        {
+          "from": "WAIT_ACK_0", "event": "rdt_rcv", "guard": "notcorrupt && isACK0",
+          "actions": ["stop_timer"],
+          "to": "WAIT_CALL_1",
+          "label": { "event": "rdt_rcv(rcvpkt) && notcorrupt(rcvpkt) && isACK(rcvpkt,0)", "action": "stop_timer" }
+        },
+        {
+          "from": "WAIT_CALL_1", "event": "rdt_rcv",
+          "to": "WAIT_CALL_1", "loop": "right",
+          "label": { "event": "rdt_rcv(rcvpkt)", "action": "Λ" }
+        },
+        {
+          "from": "WAIT_CALL_1", "event": "rdt_send",
+          "actions": ["make_pkt(1)", "udt_send", "start_timer"],
+          "to": "WAIT_ACK_1",
+          "label": { "event": "rdt_send(data)", "action": "sndpkt = make_pkt(1, data, checksum)\nudt_send(sndpkt); start_timer" }
+        },
+        {
+          "from": "WAIT_ACK_1", "event": "rdt_rcv", "guard": "corrupt || isACK0",
+          "to": "WAIT_ACK_1", "loop": "bottom",
+          "label": { "event": "rdt_rcv(rcvpkt) && (corrupt(rcvpkt) || isACK(rcvpkt,0))", "action": "Λ" }
+        },
+        {
+          "from": "WAIT_ACK_1", "event": "timeout",
+          "actions": ["udt_send", "start_timer"],
+          "to": "WAIT_ACK_1", "loop": "left",
+          "label": { "event": "timeout", "action": "udt_send(sndpkt); start_timer" }
+        },
+        {
+          "from": "WAIT_ACK_1", "event": "rdt_rcv", "guard": "notcorrupt && isACK1",
+          "actions": ["stop_timer"],
+          "to": "WAIT_CALL_0",
+          "label": { "event": "rdt_rcv(rcvpkt) && notcorrupt(rcvpkt) && isACK(rcvpkt,1)", "action": "stop_timer" }
+        }
+      ]
+    },
+    {
+      "name": "receiver",
+      "title": "rdt 3.0 · receptor (rdt 2.2)",
+      "initial": "WAIT_0",
+      "init": ["make_pkt(ACK1)"],
+      "width": 680,
+      "height": 340,
+      "states": [
+        { "id": "WAIT_0", "label": "Espera 0 de baixo", "x": 190, "y": 170, "loop": "left" },
+        { "id": "WAIT_1", "label": "Espera 1 de baixo", "x": 490, "y": 170, "loop": "right" }
+      ],
+      "transitions": [
+        {
+          "from": "WAIT_0", "event": "rdt_rcv", "guard": "notcorrupt && has_seq0",
+          "actions": ["extract", "deliver_data", "make_pkt(ACK0)", "udt_send"],
+          "to": "WAIT_1", "bend": -0.25,
+          "label": { "event": "rdt_rcv(rcvpkt) && notcorrupt(rcvpkt) && has_seq0(rcvpkt)", "action": "extract; deliver_data\nsndpkt = make_pkt(ACK, 0, chksum); udt_send" }
+        },
+        {
+          "from": "WAIT_0", "event": "rdt_rcv", "guard": "corrupt || has_seq1",
+          "actions": ["udt_send"],
+          "to": "WAIT_0", "loop": "left",
+          "label": { "event": "rdt_rcv(rcvpkt) && (corrupt(rcvpkt) || has_seq1(rcvpkt))", "action": "udt_send(sndpkt)" }
+        },
+        {
+          "from": "WAIT_1", "event": "rdt_rcv", "guard": "notcorrupt && has_seq1",
+          "actions": ["extract", "deliver_data", "make_pkt(ACK1)", "udt_send"],
+          "to": "WAIT_0", "bend": -0.25,
+          "label": { "event": "rdt_rcv(rcvpkt) && notcorrupt(rcvpkt) && has_seq1(rcvpkt)", "action": "extract; deliver_data\nsndpkt = make_pkt(ACK, 1, chksum); udt_send" }
+        },
+        {
+          "from": "WAIT_1", "event": "rdt_rcv", "guard": "corrupt || has_seq0",
+          "actions": ["udt_send"],
+          "to": "WAIT_1", "loop": "right",
+          "label": { "event": "rdt_rcv(rcvpkt) && (corrupt(rcvpkt) || has_seq0(rcvpkt))", "action": "udt_send(sndpkt)" }
+        }
+      ]
+    }
+  ]
+}

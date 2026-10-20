@@ -1,0 +1,18 @@
+{
+  "id": "07-closed-port",
+  "number": "7",
+  "title": "Conexão a uma porta fechada",
+  "expected": "Resposta RST",
+  "description": "B não chama listen(). O SYN de A chega a uma porta sem socket: o demultiplexador cria um TCB transitório em CLOSED, que responde RST,ACK. A sai de SYN_SENT direto para CLOSED (conexão recusada).",
+  "protocol": "tcp",
+  "seed": 7,
+  "channel": { "delayMin": "50ms", "delayMax": "50ms" },
+  "script": [ { "at": "10ms", "host": "A", "do": "connect" } ],
+  "expect": [
+    { "title": "B responde com RST", "count": { "kind": "send", "host": "B", "flags": "RST" }, "eq": 1 },
+    { "count": { "kind": "transition", "host": "B", "from": "CLOSED", "event": "rcv.SYN", "action": "send(RST)" }, "eq": 1 },
+    { "visits": { "host": "A", "states": ["CLOSED", "SYN_SENT", "CLOSED"], "exact": true } },
+    { "title": "a aplicação de A é avisada da recusa", "count": { "kind": "app", "host": "A", "event": "refused" }, "eq": 1 },
+    { "title": "nenhuma retransmissão depois do RST", "metric": { "name": "retransmissions", "eq": 0 } }
+  ]
+}

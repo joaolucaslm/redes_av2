@@ -1,0 +1,17 @@
+{
+  "id": "12-rdt21",
+  "number": "12",
+  "title": "rdt 2.1 sobre canal com erros de bits",
+  "expected": "Todas as mensagens entregues uma vez, em ordem, só com NAK e reenvio",
+  "description": "Prova de extensibilidade: rdt-2.1.json roda com o mesmo motor e o mesmo canal, sem código específico da versão. 30% dos pacotes chegam corrompidos.",
+  "protocol": "rdt-2.1",
+  "seed": 12,
+  "channel": { "corrupt": 0.3, "delayMin": "20ms", "delayMax": "30ms" },
+  "workload": { "messages": 10, "size": 64 },
+  "expect": [
+    { "metric": { "name": "inOrder", "eq": 10 } },
+    { "metric": { "name": "duplicates", "eq": 0 } },
+    { "count": { "kind": "send", "host": "B", "exactFlags": "NAK" }, "atLeast": 1 },
+    { "metric": { "name": "retransmissions", "min": 1 } }
+  ]
+}

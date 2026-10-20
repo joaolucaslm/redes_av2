@@ -1,0 +1,83 @@
+{
+  "protocol": "udp",
+  "family": "udp",
+  "title": "UDP",
+  "source": "Kurose & Ross, seção 3.3",
+  "summary": "Sem conexão: um único estado. Só multiplexação por porta e checksum em complemento de 1. Sem handshake, sem ACK, sem retransmissão.",
+  "machines": [
+    {
+      "name": "socket",
+      "title": "Socket UDP",
+      "initial": "READY",
+      "width": 660,
+      "height": 330,
+      "states": [
+        {
+          "id": "READY",
+          "label": "READY",
+          "x": 330,
+          "y": 165,
+          "note": "único estado"
+        }
+      ],
+      "transitions": [
+        {
+          "from": "READY",
+          "event": "send",
+          "actions": [
+            "make_datagram",
+            "udt_send"
+          ],
+          "to": "READY",
+          "loop": "top",
+          "label": {
+            "event": "send(data)",
+            "action": "make_datagram; udt_send"
+          }
+        },
+        {
+          "from": "READY",
+          "event": "rcv",
+          "guard": "intact && bound",
+          "actions": [
+            "deliver_data"
+          ],
+          "to": "READY",
+          "loop": "right",
+          "label": {
+            "event": "rcv ∧ checksum ok",
+            "action": "deliver_data"
+          }
+        },
+        {
+          "from": "READY",
+          "event": "rcv",
+          "guard": "!intact",
+          "actions": [
+            "discard(checksum)"
+          ],
+          "to": "READY",
+          "loop": "bottom",
+          "label": {
+            "event": "rcv ∧ corrompido",
+            "action": "descarta em silêncio"
+          }
+        },
+        {
+          "from": "READY",
+          "event": "rcv",
+          "guard": "intact && !bound",
+          "actions": [
+            "discard(port)"
+          ],
+          "to": "READY",
+          "loop": "left",
+          "label": {
+            "event": "rcv ∧ porta sem socket",
+            "action": "descarta"
+          }
+        }
+      ]
+    }
+  ]
+}

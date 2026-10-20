@@ -1,0 +1,19 @@
+{
+  "id": "09-udp-checksum",
+  "number": "9",
+  "title": "Datagrama com checksum corrompido",
+  "expected": "Descartado pelo receptor, sem notificação",
+  "description": "O canal troca um bit do 3º datagrama de A. O receptor recalcula a soma em complemento de 1 sobre pseudo-cabeçalho, cabeçalho e dados, percebe a divergência e descarta o datagrama em silêncio.",
+  "protocol": "udp",
+  "seed": 10,
+  "channel": { "delayMin": "40ms", "delayMax": "60ms" },
+  "faults": [ { "action": "corrupt", "match": { "from": "A" }, "nth": 3 } ],
+  "workload": { "messages": 5, "size": 200, "interval": "10ms" },
+  "expect": [
+    { "metric": { "name": "corrupted", "eq": 1 } },
+    { "title": "B descarta por checksum", "count": { "kind": "discard", "host": "B", "reason": "checksum" }, "eq": 1 },
+    { "count": { "kind": "transition", "host": "B", "event": "rcv", "action": "discard(checksum)" }, "eq": 1 },
+    { "metric": { "name": "delivered", "eq": 4 } },
+    { "title": "o remetente não é notificado", "count": { "kind": "send", "host": "B" }, "eq": 0 }
+  ]
+}

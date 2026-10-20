@@ -1,0 +1,26 @@
+{
+  "id": "05-simultaneous-close",
+  "number": "5",
+  "title": "Fechamento simultâneo",
+  "expected": "Ambos passam por FIN_WAIT_1→CLOSING→TIME_WAIT",
+  "description": "A e B chamam close() no mesmo instante virtual (t=400 ms). Os FINs se cruzam no canal: cada lado recebe um FIN que ainda não confirma o seu próprio FIN e vai para CLOSING.",
+  "protocol": "tcp",
+  "seed": 5,
+  "screenshot": true,
+  "channel": { "delayMin": "50ms", "delayMax": "50ms" },
+  "tcp": { "msl": "500ms" },
+  "script": [
+    { "at": "0ms", "host": "B", "do": "listen" },
+    { "at": "10ms", "host": "A", "do": "connect" },
+    { "at": "400ms", "host": "A", "do": "close" },
+    { "at": "400ms", "host": "B", "do": "close" }
+  ],
+  "expect": [
+    { "visits": { "host": "A", "states": ["FIN_WAIT_1", "CLOSING", "TIME_WAIT", "CLOSED"] } },
+    { "visits": { "host": "B", "states": ["FIN_WAIT_1", "CLOSING", "TIME_WAIT", "CLOSED"] } },
+    { "title": "ninguém passa por FIN_WAIT_2", "count": { "kind": "transition", "to": "FIN_WAIT_2" }, "eq": 0 },
+    { "dwell": { "host": "A", "machine": "connection", "state": "TIME_WAIT", "eq": "1s" } },
+    { "dwell": { "host": "B", "machine": "connection", "state": "TIME_WAIT", "eq": "1s" } },
+    { "metric": { "name": "rejected", "eq": 0 } }
+  ]
+}

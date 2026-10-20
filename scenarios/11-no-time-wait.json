@@ -1,0 +1,31 @@
+{
+  "id": "11-no-time-wait",
+  "number": "11",
+  "title": "Sem TIME_WAIT, o último ACK perdido vira RST",
+  "expected": "Com TIME_WAIT, A reconfirma o FIN repetido; sem TIME_WAIT, A responde RST e B aborta",
+  "description": "Cenário extra para a pergunta 1. O encerramento do cenário 4 é repetido, mas o ACK final de A (2º ACK puro) se perde. B, em LAST_ACK, reenvia o FIN após o RTO. A execução sem-tw usa a variante tcp-sem-time-wait.json, idêntica exceto pela remoção do estado TIME_WAIT.",
+  "seed": 11,
+  "channel": { "delayMin": "50ms", "delayMax": "50ms" },
+  "tcp": { "msl": "500ms" },
+  "runs": [
+    { "name": "com-tw", "protocol": "tcp" },
+    { "name": "sem-tw", "protocol": "tcp-sem-time-wait" }
+  ],
+  "faults": [ { "action": "drop", "match": { "from": "A", "exactFlags": "ACK" }, "nth": 2 } ],
+  "script": [
+    { "at": "0ms", "host": "B", "do": "listen" },
+    { "at": "10ms", "host": "A", "do": "connect" },
+    { "on": "A:ESTABLISHED", "after": "200ms", "host": "A", "do": "close" },
+    { "on": "B:CLOSE_WAIT", "after": "30ms", "host": "B", "do": "close" }
+  ],
+  "expect": [
+    { "run": "com-tw", "title": "B reenvia o FIN", "count": { "kind": "send", "host": "B", "flags": "FIN", "retransmission": true }, "eq": 1 },
+    { "run": "com-tw", "title": "A, ainda em TIME_WAIT, confirma de novo", "count": { "kind": "transition", "host": "A", "from": "TIME_WAIT", "event": "rcv.FIN" }, "eq": 1 },
+    { "run": "com-tw", "visits": { "host": "B", "states": ["CLOSE_WAIT", "LAST_ACK", "CLOSED"] } },
+    { "run": "com-tw", "title": "B fecha de forma ordenada", "count": { "kind": "transition", "host": "B", "from": "LAST_ACK", "event": "rcv.ACK", "to": "CLOSED" }, "eq": 1 },
+    { "run": "com-tw", "count": { "kind": "send", "flags": "RST" }, "eq": 0 },
+    { "run": "sem-tw", "title": "A já está em CLOSED e responde RST", "count": { "kind": "send", "host": "A", "flags": "RST" }, "eq": 1 },
+    { "run": "sem-tw", "title": "B aborta em vez de fechar", "count": { "kind": "transition", "host": "B", "from": "LAST_ACK", "event": "rcv.RST", "to": "CLOSED" }, "eq": 1 },
+    { "run": "sem-tw", "count": { "kind": "app", "host": "B", "event": "reset" }, "eq": 1 }
+  ]
+}

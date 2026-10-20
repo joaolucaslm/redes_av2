@@ -1,0 +1,25 @@
+{
+  "id": "02-syn-loss",
+  "number": "2",
+  "title": "Perda do SYN",
+  "expected": "Timeout e retransmissão do SYN",
+  "description": "Uma regra do canal descarta o primeiro SYN de A. O temporizador de retransmissão (1 s inicial) expira e A reenvia o SYN com o mesmo número de sequência.",
+  "protocol": "tcp",
+  "seed": 2,
+  "channel": { "delayMin": "50ms", "delayMax": "50ms" },
+  "faults": [ { "action": "drop", "match": { "from": "A", "exactFlags": "SYN" }, "nth": 1 } ],
+  "script": [
+    { "at": "0ms", "host": "B", "do": "listen" },
+    { "at": "10ms", "host": "A", "do": "connect" }
+  ],
+  "expect": [
+    { "title": "o SYN original se perde no canal", "count": { "kind": "loss", "host": "A", "flags": "SYN" }, "eq": 1 },
+    { "title": "o RTO de A expira uma vez", "count": { "kind": "timeout", "host": "A", "timer": "rto" }, "eq": 1 },
+    { "title": "A reenvia o SYN", "count": { "kind": "send", "host": "A", "exactFlags": "SYN", "retransmission": true }, "eq": 1 },
+    { "order": { "first": { "kind": "timeout", "host": "A", "timer": "rto" }, "then": { "kind": "send", "host": "A", "exactFlags": "SYN", "retransmission": true } } },
+    { "count": { "kind": "transition", "host": "A", "from": "SYN_SENT", "event": "timeout.rto", "to": "SYN_SENT" }, "eq": 1 },
+    { "visits": { "host": "A", "states": ["CLOSED", "SYN_SENT", "ESTABLISHED"], "exact": true } },
+    { "visits": { "host": "B", "states": ["LISTEN", "SYN_RCVD", "ESTABLISHED"] } },
+    { "title": "A não amostra RTT do SYN retransmitido (Karn)", "count": { "kind": "metric", "host": "A", "metric": "rtt_sample" }, "eq": 0 }
+  ]
+}

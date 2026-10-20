@@ -1,0 +1,1065 @@
+{
+  "protocol": "tcp",
+  "family": "tcp",
+  "title": "TCP",
+  "source": "Kurose & Ross, figuras 3.41 e 3.42 (diagrama completo da RFC 793)",
+  "summary": "Gerenciamento de conexão com os 11 estados: handshake de 3 vias, encerramento de 4 vias, fechamento simultâneo, TIME_WAIT de 2·MSL e RST para porta fechada. A transferência confiável roda como auto-laços em ESTABLISHED e delega o controle de congestionamento à máquina tcp-congestion.",
+  "uses": [
+    "tcp-congestion"
+  ],
+  "machines": [
+    {
+      "name": "connection",
+      "title": "Conexão TCP",
+      "initial": "CLOSED",
+      "width": 1120,
+      "height": 840,
+      "states": [
+        {
+          "id": "CLOSED",
+          "x": 560,
+          "y": 80,
+          "loop": "top"
+        },
+        {
+          "id": "LISTEN",
+          "x": 560,
+          "y": 186,
+          "loop": "left"
+        },
+        {
+          "id": "SYN_RCVD",
+          "x": 350,
+          "y": 290,
+          "loop": "left"
+        },
+        {
+          "id": "SYN_SENT",
+          "x": 770,
+          "y": 290,
+          "loop": "right"
+        },
+        {
+          "id": "ESTABLISHED",
+          "x": 560,
+          "y": 430,
+          "loop": "right"
+        },
+        {
+          "id": "FIN_WAIT_1",
+          "x": 350,
+          "y": 540,
+          "loop": "left"
+        },
+        {
+          "id": "CLOSE_WAIT",
+          "x": 770,
+          "y": 540,
+          "loop": "right"
+        },
+        {
+          "id": "CLOSING",
+          "x": 560,
+          "y": 620,
+          "loop": "top"
+        },
+        {
+          "id": "FIN_WAIT_2",
+          "x": 350,
+          "y": 700,
+          "loop": "left"
+        },
+        {
+          "id": "LAST_ACK",
+          "x": 770,
+          "y": 700,
+          "loop": "right"
+        },
+        {
+          "id": "TIME_WAIT",
+          "x": 560,
+          "y": 764,
+          "loop": "right"
+        }
+      ],
+      "transitions": [
+        {
+          "from": "CLOSED",
+          "event": "connect",
+          "actions": [
+            "isn.choose",
+            "send(SYN)"
+          ],
+          "to": "SYN_SENT",
+          "bend": -0.16,
+          "label": {
+            "event": "connect()",
+            "action": "snd SYN"
+          },
+          "labelAt": {
+            "x": 700,
+            "y": 165
+          }
+        },
+        {
+          "from": "CLOSED",
+          "event": "listen",
+          "actions": [
+            "passive.open"
+          ],
+          "to": "LISTEN",
+          "label": {
+            "event": "listen()",
+            "action": "Λ"
+          },
+          "labelAt": {
+            "x": 505,
+            "y": 133
+          }
+        },
+        {
+          "from": "CLOSED",
+          "event": [
+            "rcv.SYN",
+            "rcv.SYNACK",
+            "rcv.ACK",
+            "rcv.data",
+            "rcv.FIN"
+          ],
+          "actions": [
+            "send(RST)"
+          ],
+          "to": "CLOSED",
+          "loop": "top",
+          "label": {
+            "event": "rcv seg (porta fechada)",
+            "action": "snd RST"
+          }
+        },
+        {
+          "from": "CLOSED",
+          "event": "rcv.RST",
+          "to": "CLOSED",
+          "quiet": true,
+          "label": {
+            "event": "rcv RST",
+            "action": "ignora"
+          }
+        },
+        {
+          "from": "LISTEN",
+          "event": "rcv.SYN",
+          "actions": [
+            "syn.accept",
+            "isn.choose",
+            "send(SYN|ACK)"
+          ],
+          "to": "SYN_RCVD",
+          "label": {
+            "event": "rcv SYN",
+            "action": "snd SYN,ACK"
+          },
+          "labelAt": {
+            "x": 455,
+            "y": 238
+          }
+        },
+        {
+          "from": "LISTEN",
+          "event": "close",
+          "actions": [
+            "tcb.release"
+          ],
+          "to": "CLOSED",
+          "bend": 0.5,
+          "label": {
+            "event": "close()",
+            "action": "Λ"
+          },
+          "quiet": true
+        },
+        {
+          "from": "LISTEN",
+          "event": [
+            "rcv.ACK",
+            "rcv.data",
+            "rcv.FIN",
+            "rcv.SYNACK"
+          ],
+          "actions": [
+            "send(RST)"
+          ],
+          "to": "LISTEN",
+          "loop": "left",
+          "label": {
+            "event": "rcv ACK sem conexão",
+            "action": "snd RST"
+          },
+          "quiet": true
+        },
+        {
+          "from": "LISTEN",
+          "event": "rcv.RST",
+          "to": "LISTEN",
+          "quiet": true,
+          "label": {
+            "event": "rcv RST",
+            "action": "ignora"
+          }
+        },
+        {
+          "from": "SYN_SENT",
+          "event": "rcv.SYNACK",
+          "guard": "ack_ok",
+          "actions": [
+            "syn.accept",
+            "ack.ingest",
+            "send(ACK)",
+            "app.notify(connected)"
+          ],
+          "to": "ESTABLISHED",
+          "label": {
+            "event": "rcv SYN,ACK",
+            "action": "snd ACK"
+          },
+          "labelAt": {
+            "x": 690,
+            "y": 374
+          }
+        },
+        {
+          "from": "SYN_SENT",
+          "event": "rcv.SYNACK",
+          "guard": "!ack_ok",
+          "actions": [
+            "send(RST)"
+          ],
+          "to": "SYN_SENT",
+          "quiet": true,
+          "label": {
+            "event": "rcv SYN,ACK inválido",
+            "action": "snd RST"
+          }
+        },
+        {
+          "from": "SYN_SENT",
+          "event": "rcv.SYN",
+          "actions": [
+            "syn.accept",
+            "send(SYN|ACK)"
+          ],
+          "to": "SYN_RCVD",
+          "label": {
+            "event": "rcv SYN (simultânea)",
+            "action": "snd SYN,ACK"
+          },
+          "labelAt": {
+            "x": 560,
+            "y": 312
+          }
+        },
+        {
+          "from": "SYN_SENT",
+          "event": "timeout.rto",
+          "actions": [
+            "retransmit(timeout)"
+          ],
+          "to": "SYN_SENT",
+          "loop": "right",
+          "label": {
+            "event": "timeout",
+            "action": "reenvia SYN"
+          }
+        },
+        {
+          "from": "SYN_SENT",
+          "event": "rcv.RST",
+          "guard": "ack_ok",
+          "actions": [
+            "app.notify(refused)",
+            "tcb.release"
+          ],
+          "to": "CLOSED",
+          "bend": 0.42,
+          "label": {
+            "event": "rcv RST",
+            "action": "recusada"
+          },
+          "labelAt": {
+            "x": 850,
+            "y": 150
+          }
+        },
+        {
+          "from": "SYN_SENT",
+          "event": "close",
+          "actions": [
+            "tcb.release"
+          ],
+          "to": "CLOSED",
+          "quiet": true,
+          "label": {
+            "event": "close()",
+            "action": "Λ"
+          }
+        },
+        {
+          "from": "SYN_RCVD",
+          "event": "rcv.ACK",
+          "guard": "ack_ok",
+          "actions": [
+            "ack.ingest",
+            "app.notify(connected)"
+          ],
+          "to": "ESTABLISHED",
+          "label": {
+            "event": "rcv ACK",
+            "action": "Λ"
+          },
+          "labelAt": {
+            "x": 430,
+            "y": 374
+          }
+        },
+        {
+          "from": "SYN_RCVD",
+          "event": "rcv.data",
+          "guard": "ack_ok",
+          "actions": [
+            "ack.ingest",
+            "app.notify(connected)",
+            "data.accept",
+            "send(ACK)"
+          ],
+          "to": "ESTABLISHED",
+          "quiet": true,
+          "label": {
+            "event": "rcv dados+ACK",
+            "action": "snd ACK"
+          }
+        },
+        {
+          "from": "SYN_RCVD",
+          "event": "rcv.SYN",
+          "actions": [
+            "retransmit(duplicate)"
+          ],
+          "to": "SYN_RCVD",
+          "loop": "left",
+          "label": {
+            "event": "SYN repetido",
+            "action": "reenvia SYN,ACK"
+          }
+        },
+        {
+          "from": "SYN_RCVD",
+          "event": "timeout.rto",
+          "actions": [
+            "retransmit(timeout)"
+          ],
+          "to": "SYN_RCVD",
+          "loop": "left",
+          "label": {
+            "event": "timeout",
+            "action": "reenvia SYN,ACK"
+          }
+        },
+        {
+          "from": "SYN_RCVD",
+          "event": "close",
+          "actions": [
+            "send(FIN)"
+          ],
+          "to": "FIN_WAIT_1",
+          "label": {
+            "event": "close()",
+            "action": "snd FIN"
+          },
+          "quiet": true
+        },
+        {
+          "from": "SYN_RCVD",
+          "event": "rcv.RST",
+          "guard": "passive",
+          "actions": [],
+          "to": "LISTEN",
+          "label": {
+            "event": "rcv RST",
+            "action": "Λ"
+          },
+          "quiet": true
+        },
+        {
+          "from": "SYN_RCVD",
+          "event": "rcv.RST",
+          "guard": "!passive",
+          "actions": [
+            "tcb.release"
+          ],
+          "to": "CLOSED",
+          "quiet": true,
+          "label": {
+            "event": "rcv RST",
+            "action": "Λ"
+          }
+        },
+        {
+          "from": "ESTABLISHED",
+          "event": "close",
+          "actions": [
+            "send(FIN)"
+          ],
+          "to": "FIN_WAIT_1",
+          "label": {
+            "event": "close()",
+            "action": "snd FIN"
+          },
+          "labelAt": {
+            "x": 420,
+            "y": 490
+          }
+        },
+        {
+          "from": "ESTABLISHED",
+          "event": "rcv.FIN",
+          "guard": "in_order",
+          "actions": [
+            "ack.ingest",
+            "fin.accept",
+            "send(ACK)",
+            "app.notify(peer-closed)"
+          ],
+          "to": "CLOSE_WAIT",
+          "label": {
+            "event": "rcv FIN",
+            "action": "snd ACK"
+          },
+          "labelAt": {
+            "x": 700,
+            "y": 490
+          }
+        },
+        {
+          "from": "ESTABLISHED",
+          "event": "rcv.FIN",
+          "guard": "!in_order",
+          "actions": [
+            "send(ACK)"
+          ],
+          "to": "ESTABLISHED",
+          "quiet": true,
+          "label": {
+            "event": "rcv FIN fora de ordem",
+            "action": "snd ACK duplicado"
+          }
+        },
+        {
+          "from": "ESTABLISHED",
+          "event": "send",
+          "actions": [
+            "data.enqueue",
+            "transmit(new)"
+          ],
+          "to": "ESTABLISHED",
+          "loop": "left",
+          "label": {
+            "event": "send(dados)",
+            "action": "segmenta; transmite o que a janela permite"
+          }
+        },
+        {
+          "from": "ESTABLISHED",
+          "event": "rcv.data",
+          "actions": [
+            "ack.ingest",
+            "data.accept",
+            "send(ACK)"
+          ],
+          "to": "ESTABLISHED",
+          "loop": "right",
+          "label": {
+            "event": "rcv dados",
+            "action": "entrega em ordem; snd ACK cumulativo"
+          }
+        },
+        {
+          "from": "ESTABLISHED",
+          "event": "rcv.ACK",
+          "actions": [
+            "ack.ingest"
+          ],
+          "to": "ESTABLISHED",
+          "loop": "right",
+          "label": {
+            "event": "rcv ACK",
+            "action": "avança SendBase ou conta ACK duplicado"
+          }
+        },
+        {
+          "from": "ESTABLISHED",
+          "event": "timeout.rto",
+          "actions": [
+            "retransmit(timeout)",
+            "cc(timeout)"
+          ],
+          "to": "ESTABLISHED",
+          "loop": "left",
+          "label": {
+            "event": "timeout",
+            "action": "reenvia o mais antigo; TimeoutInterval×2"
+          }
+        },
+        {
+          "from": "ESTABLISHED",
+          "event": [
+            "rcv.SYNACK",
+            "rcv.SYN"
+          ],
+          "actions": [
+            "send(ACK)"
+          ],
+          "to": "ESTABLISHED",
+          "quiet": true,
+          "label": {
+            "event": "rcv SYN repetido",
+            "action": "snd ACK"
+          }
+        },
+        {
+          "from": "ESTABLISHED",
+          "event": "rcv.RST",
+          "actions": [
+            "app.notify(reset)",
+            "tcb.release"
+          ],
+          "to": "CLOSED",
+          "quiet": true,
+          "label": {
+            "event": "rcv RST",
+            "action": "abortada"
+          }
+        },
+        {
+          "from": "FIN_WAIT_1",
+          "event": "rcv.ACK",
+          "guard": "fin_acked",
+          "actions": [
+            "ack.ingest"
+          ],
+          "to": "FIN_WAIT_2",
+          "label": {
+            "event": "rcv ACK do FIN",
+            "action": "Λ"
+          },
+          "labelAt": {
+            "x": 288,
+            "y": 622
+          }
+        },
+        {
+          "from": "FIN_WAIT_1",
+          "event": "rcv.ACK",
+          "guard": "!fin_acked",
+          "actions": [
+            "ack.ingest"
+          ],
+          "to": "FIN_WAIT_1",
+          "loop": "left",
+          "label": {
+            "event": "rcv ACK",
+            "action": "ack.ingest"
+          },
+          "quiet": true
+        },
+        {
+          "from": "FIN_WAIT_1",
+          "event": "rcv.FIN",
+          "guard": "in_order && fin_acked",
+          "actions": [
+            "ack.ingest",
+            "fin.accept",
+            "send(ACK)",
+            "timer.start(2msl)"
+          ],
+          "to": "TIME_WAIT",
+          "label": {
+            "event": "rcv FIN,ACK",
+            "action": "snd ACK"
+          },
+          "labelAt": {
+            "x": 452,
+            "y": 650
+          }
+        },
+        {
+          "from": "FIN_WAIT_1",
+          "event": "rcv.FIN",
+          "guard": "in_order && !fin_acked",
+          "actions": [
+            "ack.ingest",
+            "fin.accept",
+            "send(ACK)"
+          ],
+          "to": "CLOSING",
+          "label": {
+            "event": "rcv FIN",
+            "action": "snd ACK"
+          },
+          "labelAt": {
+            "x": 474,
+            "y": 592
+          }
+        },
+        {
+          "from": "FIN_WAIT_1",
+          "event": "rcv.FIN",
+          "guard": "!in_order",
+          "actions": [
+            "send(ACK)"
+          ],
+          "to": "FIN_WAIT_1",
+          "quiet": true,
+          "label": {
+            "event": "rcv FIN fora de ordem",
+            "action": "snd ACK duplicado"
+          }
+        },
+        {
+          "from": "FIN_WAIT_1",
+          "event": "rcv.data",
+          "guard": "fin_acked",
+          "actions": [
+            "ack.ingest",
+            "data.accept",
+            "send(ACK)"
+          ],
+          "to": "FIN_WAIT_2",
+          "quiet": true,
+          "label": {
+            "event": "rcv dados+ACK do FIN",
+            "action": "snd ACK"
+          }
+        },
+        {
+          "from": "FIN_WAIT_1",
+          "event": "rcv.data",
+          "guard": "!fin_acked",
+          "actions": [
+            "ack.ingest",
+            "data.accept",
+            "send(ACK)"
+          ],
+          "to": "FIN_WAIT_1",
+          "quiet": true,
+          "label": {
+            "event": "rcv dados",
+            "action": "snd ACK"
+          }
+        },
+        {
+          "from": "FIN_WAIT_1",
+          "event": "timeout.rto",
+          "actions": [
+            "retransmit(timeout)",
+            "cc(timeout)"
+          ],
+          "to": "FIN_WAIT_1",
+          "loop": "left",
+          "label": {
+            "event": "timeout",
+            "action": "reenvia FIN"
+          }
+        },
+        {
+          "from": "FIN_WAIT_1",
+          "event": "rcv.RST",
+          "actions": [
+            "app.notify(reset)",
+            "tcb.release"
+          ],
+          "to": "CLOSED",
+          "quiet": true,
+          "label": {
+            "event": "rcv RST",
+            "action": "abortada"
+          }
+        },
+        {
+          "from": "FIN_WAIT_2",
+          "event": "rcv.FIN",
+          "guard": "in_order",
+          "actions": [
+            "fin.accept",
+            "send(ACK)",
+            "timer.start(2msl)"
+          ],
+          "to": "TIME_WAIT",
+          "label": {
+            "event": "rcv FIN",
+            "action": "snd ACK"
+          },
+          "labelAt": {
+            "x": 405,
+            "y": 748
+          }
+        },
+        {
+          "from": "FIN_WAIT_2",
+          "event": "rcv.FIN",
+          "guard": "!in_order",
+          "actions": [
+            "send(ACK)"
+          ],
+          "to": "FIN_WAIT_2",
+          "quiet": true,
+          "label": {
+            "event": "rcv FIN fora de ordem",
+            "action": "snd ACK duplicado"
+          }
+        },
+        {
+          "from": "FIN_WAIT_2",
+          "event": "rcv.data",
+          "actions": [
+            "data.accept",
+            "send(ACK)"
+          ],
+          "to": "FIN_WAIT_2",
+          "loop": "left",
+          "label": {
+            "event": "rcv dados (meia-conexão)",
+            "action": "snd ACK"
+          },
+          "quiet": true
+        },
+        {
+          "from": "FIN_WAIT_2",
+          "event": "rcv.ACK",
+          "actions": [
+            "ack.ingest"
+          ],
+          "to": "FIN_WAIT_2",
+          "quiet": true,
+          "label": {
+            "event": "rcv ACK",
+            "action": "Λ"
+          }
+        },
+        {
+          "from": "FIN_WAIT_2",
+          "event": "rcv.RST",
+          "actions": [
+            "app.notify(reset)",
+            "tcb.release"
+          ],
+          "to": "CLOSED",
+          "quiet": true,
+          "label": {
+            "event": "rcv RST",
+            "action": "abortada"
+          }
+        },
+        {
+          "from": "CLOSING",
+          "event": "rcv.ACK",
+          "guard": "fin_acked",
+          "actions": [
+            "ack.ingest",
+            "timer.start(2msl)"
+          ],
+          "to": "TIME_WAIT",
+          "label": {
+            "event": "rcv ACK do FIN",
+            "action": "Λ"
+          },
+          "labelAt": {
+            "x": 612,
+            "y": 702
+          }
+        },
+        {
+          "from": "CLOSING",
+          "event": "rcv.ACK",
+          "guard": "!fin_acked",
+          "actions": [
+            "ack.ingest"
+          ],
+          "to": "CLOSING",
+          "quiet": true,
+          "label": {
+            "event": "rcv ACK",
+            "action": "Λ"
+          }
+        },
+        {
+          "from": "CLOSING",
+          "event": "rcv.FIN",
+          "actions": [
+            "send(ACK)"
+          ],
+          "to": "CLOSING",
+          "loop": "right",
+          "label": {
+            "event": "rcv FIN repetido",
+            "action": "snd ACK"
+          },
+          "quiet": true
+        },
+        {
+          "from": "CLOSING",
+          "event": "timeout.rto",
+          "actions": [
+            "retransmit(timeout)"
+          ],
+          "to": "CLOSING",
+          "loop": "top",
+          "label": {
+            "event": "timeout",
+            "action": "reenvia FIN"
+          }
+        },
+        {
+          "from": "CLOSING",
+          "event": "rcv.RST",
+          "actions": [
+            "tcb.release"
+          ],
+          "to": "CLOSED",
+          "quiet": true,
+          "label": {
+            "event": "rcv RST",
+            "action": "Λ"
+          }
+        },
+        {
+          "from": "TIME_WAIT",
+          "event": "timeout.2msl",
+          "actions": [
+            "tcb.release",
+            "app.notify(closed)"
+          ],
+          "to": "CLOSED",
+          "via": [
+            {
+              "x": 90,
+              "y": 764
+            },
+            {
+              "x": 90,
+              "y": 80
+            }
+          ],
+          "labelAt": {
+            "x": 90,
+            "y": 430
+          },
+          "label": {
+            "event": "timeout 2·MSL",
+            "action": "Λ"
+          }
+        },
+        {
+          "from": "TIME_WAIT",
+          "event": "rcv.FIN",
+          "actions": [
+            "send(ACK)",
+            "timer.restart(2msl)"
+          ],
+          "to": "TIME_WAIT",
+          "loop": "right",
+          "label": {
+            "event": "rcv FIN repetido",
+            "action": "snd ACK; reinicia 2·MSL"
+          }
+        },
+        {
+          "from": "TIME_WAIT",
+          "event": [
+            "rcv.ACK",
+            "rcv.data"
+          ],
+          "to": "TIME_WAIT",
+          "quiet": true,
+          "label": {
+            "event": "rcv ACK atrasado",
+            "action": "ignora"
+          }
+        },
+        {
+          "from": "CLOSE_WAIT",
+          "event": "close",
+          "actions": [
+            "send(FIN)"
+          ],
+          "to": "LAST_ACK",
+          "label": {
+            "event": "close()",
+            "action": "snd FIN"
+          },
+          "labelAt": {
+            "x": 770,
+            "y": 620
+          }
+        },
+        {
+          "from": "CLOSE_WAIT",
+          "event": "send",
+          "actions": [
+            "data.enqueue",
+            "transmit(new)"
+          ],
+          "to": "CLOSE_WAIT",
+          "loop": "right",
+          "label": {
+            "event": "send (meia-conexão)",
+            "action": "meia-conexão"
+          }
+        },
+        {
+          "from": "CLOSE_WAIT",
+          "event": "rcv.ACK",
+          "actions": [
+            "ack.ingest"
+          ],
+          "to": "CLOSE_WAIT",
+          "loop": "right",
+          "label": {
+            "event": "rcv ACK",
+            "action": "ack.ingest"
+          },
+          "quiet": true
+        },
+        {
+          "from": "CLOSE_WAIT",
+          "event": [
+            "rcv.FIN",
+            "rcv.data"
+          ],
+          "actions": [
+            "send(ACK)"
+          ],
+          "to": "CLOSE_WAIT",
+          "quiet": true,
+          "label": {
+            "event": "rcv FIN/dados repetidos",
+            "action": "snd ACK"
+          }
+        },
+        {
+          "from": "CLOSE_WAIT",
+          "event": "timeout.rto",
+          "actions": [
+            "retransmit(timeout)",
+            "cc(timeout)"
+          ],
+          "to": "CLOSE_WAIT",
+          "quiet": true,
+          "label": {
+            "event": "timeout",
+            "action": "reenvia"
+          }
+        },
+        {
+          "from": "CLOSE_WAIT",
+          "event": "rcv.RST",
+          "actions": [
+            "app.notify(reset)",
+            "tcb.release"
+          ],
+          "to": "CLOSED",
+          "quiet": true,
+          "label": {
+            "event": "rcv RST",
+            "action": "abortada"
+          }
+        },
+        {
+          "from": "LAST_ACK",
+          "event": "rcv.ACK",
+          "guard": "fin_acked",
+          "actions": [
+            "ack.ingest",
+            "tcb.release",
+            "app.notify(closed)"
+          ],
+          "to": "CLOSED",
+          "via": [
+            {
+              "x": 1030,
+              "y": 700
+            },
+            {
+              "x": 1030,
+              "y": 80
+            }
+          ],
+          "labelAt": {
+            "x": 1030,
+            "y": 430
+          },
+          "label": {
+            "event": "rcv ACK do FIN",
+            "action": "Λ"
+          }
+        },
+        {
+          "from": "LAST_ACK",
+          "event": "rcv.ACK",
+          "guard": "!fin_acked",
+          "actions": [
+            "ack.ingest"
+          ],
+          "to": "LAST_ACK",
+          "quiet": true,
+          "label": {
+            "event": "rcv ACK",
+            "action": "Λ"
+          }
+        },
+        {
+          "from": "LAST_ACK",
+          "event": "timeout.rto",
+          "actions": [
+            "retransmit(timeout)"
+          ],
+          "to": "LAST_ACK",
+          "loop": "right",
+          "label": {
+            "event": "timeout",
+            "action": "reenvia FIN"
+          }
+        },
+        {
+          "from": "LAST_ACK",
+          "event": [
+            "rcv.FIN",
+            "rcv.data"
+          ],
+          "actions": [
+            "send(ACK)"
+          ],
+          "to": "LAST_ACK",
+          "quiet": true,
+          "label": {
+            "event": "rcv FIN repetido",
+            "action": "snd ACK"
+          }
+        },
+        {
+          "from": "LAST_ACK",
+          "event": "rcv.RST",
+          "actions": [
+            "app.notify(reset)",
+            "tcb.release"
+          ],
+          "to": "CLOSED",
+          "quiet": true,
+          "label": {
+            "event": "rcv RST",
+            "action": "fechamento abortado"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "04-normal-close",
+  "number": "4",
+  "title": "Encerramento normal",
+  "expected": "A passa por FIN_WAIT_1, FIN_WAIT_2 e TIME_WAIT; B por CLOSE_WAIT e LAST_ACK",
+  "description": "Depois do handshake A fecha a conexão. B confirma o FIN, entra em CLOSE_WAIT e fecha 30 ms depois. A espera 2·MSL em TIME_WAIT (MSL = 500 ms nesta simulação).",
+  "protocol": "tcp",
+  "seed": 4,
+  "channel": { "delayMin": "50ms", "delayMax": "50ms" },
+  "tcp": { "msl": "500ms" },
+  "script": [
+    { "at": "0ms", "host": "B", "do": "listen" },
+    { "at": "10ms", "host": "A", "do": "connect" },
+    { "on": "A:ESTABLISHED", "after": "200ms", "host": "A", "do": "close" },
+    { "on": "B:CLOSE_WAIT", "after": "30ms", "host": "B", "do": "close" }
+  ],
+  "expect": [
+    { "visits": { "host": "A", "states": ["ESTABLISHED", "FIN_WAIT_1", "FIN_WAIT_2", "TIME_WAIT", "CLOSED"] } },
+    { "visits": { "host": "B", "states": ["ESTABLISHED", "CLOSE_WAIT", "LAST_ACK", "CLOSED"] } },
+    { "title": "TIME_WAIT dura exatamente 2·MSL", "dwell": { "host": "A", "machine": "connection", "state": "TIME_WAIT", "eq": "1s" } },
+    { "title": "o temporizador 2·MSL de A expira", "count": { "kind": "timeout", "host": "A", "timer": "2msl" }, "eq": 1 },
+    { "title": "um FIN de cada lado", "count": { "kind": "send", "flags": "FIN" }, "eq": 2 },
+    { "metric": { "name": "rejected", "eq": 0 } }
+  ]
+}

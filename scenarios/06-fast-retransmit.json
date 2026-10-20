@@ -1,0 +1,27 @@
+{
+  "id": "06-fast-retransmit",
+  "number": "6",
+  "title": "Perda de um segmento de dados no meio de 10",
+  "expected": "3 ACKs duplicados e retransmissão rápida, sem esperar o timeout",
+  "description": "A envia 10 mensagens de 1 MSS (1000 B) e o 5º segmento de dados se perde. Os segmentos seguintes geram 3 ACKs duplicados e a máquina de congestionamento dispara a retransmissão rápida. A execução sem-fr repete tudo com a guarda fast_retransmit desligada e serve de contrafactual para medir a economia de ponta a ponta.",
+  "seed": 6,
+  "screenshot": true,
+  "channel": { "delayMin": "45ms", "delayMax": "55ms" },
+  "runs": [
+    { "name": "com-fr", "protocol": "tcp" },
+    { "name": "sem-fr", "protocol": "tcp", "tcp": { "fastRetransmit": false } }
+  ],
+  "workload": { "messages": 10, "size": 1000 },
+  "faults": [ { "action": "drop", "match": { "from": "A", "data": true }, "nth": 5 } ],
+  "expect": [
+    { "run": "com-fr", "title": "pelo menos 3 ACKs duplicados chegam a A", "count": { "kind": "transition", "host": "A", "machine": "congestion", "event": "ack.dup" }, "atLeast": 3 },
+    { "run": "com-fr", "title": "exatamente uma retransmissão rápida", "count": { "kind": "send", "host": "A", "retransmission": true, "reason": "fast" }, "eq": 1 },
+    { "run": "com-fr", "title": "nenhum timeout de retransmissão", "count": { "kind": "timeout", "host": "A", "timer": "rto" }, "eq": 0 },
+    { "run": "com-fr", "visits": { "host": "A", "machine": "congestion", "states": ["SLOW_START", "FAST_RECOVERY", "CONGESTION_AVOIDANCE"] } },
+    { "run": "com-fr", "title": "a retransmissão rápida acontece antes do prazo do RTO", "metric": { "name": "fastRetransmitSavedMs", "gt": 0 } },
+    { "run": "com-fr", "metric": { "name": "inOrder", "eq": 10 } },
+    { "run": "sem-fr", "title": "sem a guarda, só o timeout recupera a perda", "count": { "kind": "timeout", "host": "A", "timer": "rto" }, "atLeast": 1 },
+    { "run": "sem-fr", "metric": { "name": "inOrder", "eq": 10 } },
+    { "run": "com-fr", "title": "com retransmissão rápida a transferência termina antes", "metric": { "name": "totalTimeMs", "below": "sem-fr:totalTimeMs" } }
+  ]
+}

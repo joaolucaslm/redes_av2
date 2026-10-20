@@ -1,0 +1,17 @@
+{
+  "id": "08b-udp-dup-reorder",
+  "number": "8b",
+  "title": "Duplicação e reordenação chegam à aplicação",
+  "expected": "Duplicados e fora de ordem são entregues como chegaram",
+  "description": "Complemento do item 4.2: com duplicação e reordenação no canal, o receptor UDP entrega à aplicação cópias repetidas e mensagens fora de ordem, sem qualquer correção.",
+  "protocol": "udp",
+  "seed": 9,
+  "channel": { "loss": 0.1, "duplicate": 0.25, "reorder": 0.25, "reorderLag": "80ms", "delayMin": "40ms", "delayMax": "60ms" },
+  "workload": { "messages": 20, "size": 200, "interval": "10ms" },
+  "expect": [
+    { "metric": { "name": "duplicates", "min": 1 } },
+    { "metric": { "name": "outOfOrder", "min": 1 } },
+    { "metric": { "name": "retransmissions", "eq": 0 } },
+    { "title": "toda duplicata do canal chega à aplicação", "metric": { "name": "duplicates", "sameAs": "duplicated" } }
+  ]
+}

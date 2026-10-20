@@ -1,0 +1,36 @@
+:root {
+  --bg: #14110e;
+  --bg-chassis: #191511;
+  --bg-panel: #1e1915;
+  --bg-panel-hi: #241e19;
+  --bg-screen: #0f0d0b;
+  --bg-key: #2b241e;
+  --bg-key-hi: #352c24;
+  --line: #3b3128;
+  --line-soft: #2a231d;
+  --line-strong: #54473a;
+  --grid: #231d18;
+  --grid-major: #2f2720;
+  --text: #ecdfc8;
+  --text-dim: #a29079;
+  --text-faint: #6e6151;
+  --brass: #c8a25c;
+  --brass-dim: #8a7243;
+  --phos-a: #8dffa6;
+  --phos-a-dim: #3c7a4b;
+  --phos-b: #72d9ff;
+  --phos-b-dim: #2f6276;
+  --amber: #ffb347;
+  --amber-dim: #7a5622;
+  --red: #ff5b49;
+  --red-dim: #6e2a22;
+  --magenta: #ff73d8;
+  --violet: #b59cff;
+  --led-off: #3a2a22;
+  --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+  --font-label: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+  --radius: 3px;
+  --header-h: 46px;
+  --transport-h: 64px;
+  --log-h: 210px;
+}

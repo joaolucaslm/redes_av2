@@ -1,0 +1,17 @@
+{
+  "id": "13-rdt30",
+  "number": "13",
+  "title": "rdt 3.0 sobre canal com perdas",
+  "expected": "Temporizador recupera perdas sem NAK",
+  "description": "rdt-3.0.json foi escrito só em JSON, reaproveitando o vocabulário do rdt 2.1 (make_pkt, udt_send, start_timer…). 20% de perda e 10% de corrupção.",
+  "protocol": "rdt-3.0",
+  "seed": 13,
+  "channel": { "loss": 0.2, "corrupt": 0.1, "delayMin": "20ms", "delayMax": "30ms" },
+  "workload": { "messages": 10, "size": 64 },
+  "expect": [
+    { "metric": { "name": "inOrder", "eq": 10 } },
+    { "metric": { "name": "duplicates", "eq": 0 } },
+    { "metric": { "name": "timeouts", "min": 1 } },
+    { "count": { "kind": "send", "exactFlags": "NAK" }, "eq": 0 }
+  ]
+}

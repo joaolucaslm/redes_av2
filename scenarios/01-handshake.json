@@ -1,0 +1,22 @@
+{
+  "id": "01-handshake",
+  "number": "1",
+  "title": "Handshake sem falhas",
+  "expected": "A: CLOSED→SYN_SENT→ESTABLISHED; B: LISTEN→SYN_RCVD→ESTABLISHED",
+  "description": "Canal limpo com atraso fixo de 50 ms. B abre a porta 80 em t=0 e A conecta em t=10 ms.",
+  "protocol": "tcp",
+  "seed": 1,
+  "channel": { "delayMin": "50ms", "delayMax": "50ms" },
+  "script": [
+    { "at": "0ms", "host": "B", "do": "listen" },
+    { "at": "10ms", "host": "A", "do": "connect" }
+  ],
+  "expect": [
+    { "visits": { "host": "A", "states": ["CLOSED", "SYN_SENT", "ESTABLISHED"], "exact": true } },
+    { "visits": { "host": "B", "states": ["LISTEN", "SYN_RCVD", "ESTABLISHED"] } },
+    { "title": "um SYN de A e um SYN-ACK de B", "count": { "kind": "send", "flags": "SYN" }, "eq": 2 },
+    { "title": "A fecha o handshake com um ACK puro", "count": { "kind": "send", "host": "A", "exactFlags": "ACK" }, "eq": 1 },
+    { "metric": { "name": "retransmissions", "eq": 0 } },
+    { "metric": { "name": "rejected", "eq": 0 } }
+  ]
+}

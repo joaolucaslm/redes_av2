@@ -1,0 +1,1827 @@
+[
+  {
+    "id": "01-handshake",
+    "number": "1",
+    "title": "Handshake sem falhas",
+    "description": "Canal limpo com atraso fixo de 50 ms. B abre a porta 80 em t=0 e A conecta em t=10 ms.",
+    "expected": "A: CLOSED→SYN_SENT→ESTABLISHED; B: LISTEN→SYN_RCVD→ESTABLISHED",
+    "protocols": [
+      "tcp"
+    ],
+    "seed": 1,
+    "passed": true,
+    "checks": [
+      {
+        "title": "A percorre exatamente CLOSED→SYN_SENT→ESTABLISHED",
+        "passed": true,
+        "detail": "observado: CLOSED→SYN_SENT→ESTABLISHED"
+      },
+      {
+        "title": "B visita LISTEN→SYN_RCVD→ESTABLISHED",
+        "passed": true,
+        "detail": "observado: CLOSED→LISTEN→SYN_RCVD→ESTABLISHED"
+      },
+      {
+        "title": "um SYN de A e um SYN-ACK de B",
+        "passed": true,
+        "detail": "observado: 2"
+      },
+      {
+        "title": "A fecha o handshake com um ACK puro",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "retransmissions = 0",
+        "passed": true,
+        "detail": "observado: 0"
+      },
+      {
+        "title": "rejected = 0",
+        "passed": true,
+        "detail": "observado: 0"
+      }
+    ],
+    "runs": [
+      {
+        "name": "tcp",
+        "protocol": "tcp",
+        "seed": 1,
+        "stats": {
+          "offered": 0,
+          "delivered": 0,
+          "inOrder": 0,
+          "outOfOrder": 0,
+          "duplicates": 0,
+          "missing": 0,
+          "sent": 3,
+          "bytesOnWire": 60,
+          "retransmissions": 0,
+          "fastRetransmits": 0,
+          "timeouts": 0,
+          "lost": 0,
+          "corrupted": 0,
+          "duplicated": 0,
+          "reordered": 0,
+          "discarded": 0,
+          "rejected": 0,
+          "transitions": 5,
+          "rttSamples": 2,
+          "firstOfferAt": 0,
+          "lastDeliveryAt": 0,
+          "totalTime": 0,
+          "fastRetransmitSaved": 0
+        },
+        "steps": 5,
+        "end": 160000,
+        "paths": [
+          {
+            "host": "A",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "SYN_SENT",
+              "ESTABLISHED"
+            ]
+          },
+          {
+            "host": "A",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "LISTEN",
+              "SYN_RCVD",
+              "ESTABLISHED"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "02-syn-loss",
+    "number": "2",
+    "title": "Perda do SYN",
+    "description": "Uma regra do canal descarta o primeiro SYN de A. O temporizador de retransmissão (1 s inicial) expira e A reenvia o SYN com o mesmo número de sequência.",
+    "expected": "Timeout e retransmissão do SYN",
+    "protocols": [
+      "tcp"
+    ],
+    "seed": 2,
+    "passed": true,
+    "checks": [
+      {
+        "title": "o SYN original se perde no canal",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "o RTO de A expira uma vez",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "A reenvia o SYN",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "timeout[host=A timer=rto] antes de send[host=A flags exatas=SYN retransmissão=true]",
+        "passed": true,
+        "detail": "primeiro em 1010ms, segundo em 1010ms"
+      },
+      {
+        "title": "#transition[host=A de=SYN_SENT evento=timeout.rto para=SYN_SENT] = 1",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "A percorre exatamente CLOSED→SYN_SENT→ESTABLISHED",
+        "passed": true,
+        "detail": "observado: CLOSED→SYN_SENT→ESTABLISHED"
+      },
+      {
+        "title": "B visita LISTEN→SYN_RCVD→ESTABLISHED",
+        "passed": true,
+        "detail": "observado: CLOSED→LISTEN→SYN_RCVD→ESTABLISHED"
+      },
+      {
+        "title": "A não amostra RTT do SYN retransmitido (Karn)",
+        "passed": true,
+        "detail": "observado: 0"
+      }
+    ],
+    "runs": [
+      {
+        "name": "tcp",
+        "protocol": "tcp",
+        "seed": 2,
+        "stats": {
+          "offered": 0,
+          "delivered": 0,
+          "inOrder": 0,
+          "outOfOrder": 0,
+          "duplicates": 0,
+          "missing": 0,
+          "sent": 4,
+          "bytesOnWire": 80,
+          "retransmissions": 1,
+          "fastRetransmits": 0,
+          "timeouts": 1,
+          "lost": 1,
+          "corrupted": 0,
+          "duplicated": 0,
+          "reordered": 0,
+          "discarded": 0,
+          "rejected": 0,
+          "transitions": 6,
+          "rttSamples": 1,
+          "firstOfferAt": 0,
+          "lastDeliveryAt": 0,
+          "totalTime": 0,
+          "fastRetransmitSaved": 0
+        },
+        "steps": 7,
+        "end": 1160000,
+        "paths": [
+          {
+            "host": "A",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "SYN_SENT",
+              "ESTABLISHED"
+            ]
+          },
+          {
+            "host": "A",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "LISTEN",
+              "SYN_RCVD",
+              "ESTABLISHED"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "03-synack-loss",
+    "number": "3",
+    "title": "Perda do SYN-ACK",
+    "description": "O primeiro SYN-ACK de B se perde. A continua em SYN_SENT até o RTO expirar e reenviar o SYN; B, em SYN_RCVD, recebe o SYN repetido e reenvia o SYN-ACK.",
+    "expected": "Cliente retransmite o SYN; servidor reenvia o SYN-ACK",
+    "protocols": [
+      "tcp"
+    ],
+    "seed": 3,
+    "passed": true,
+    "checks": [
+      {
+        "title": "o SYN-ACK original se perde",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "cliente retransmite o SYN",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "servidor reenvia o SYN-ACK",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "B reage ao SYN repetido em SYN_RCVD",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "A percorre exatamente CLOSED→SYN_SENT→ESTABLISHED",
+        "passed": true,
+        "detail": "observado: CLOSED→SYN_SENT→ESTABLISHED"
+      },
+      {
+        "title": "B visita LISTEN→SYN_RCVD→ESTABLISHED",
+        "passed": true,
+        "detail": "observado: CLOSED→LISTEN→SYN_RCVD→ESTABLISHED"
+      }
+    ],
+    "runs": [
+      {
+        "name": "tcp",
+        "protocol": "tcp",
+        "seed": 3,
+        "stats": {
+          "offered": 0,
+          "delivered": 0,
+          "inOrder": 0,
+          "outOfOrder": 0,
+          "duplicates": 0,
+          "missing": 0,
+          "sent": 5,
+          "bytesOnWire": 100,
+          "retransmissions": 2,
+          "fastRetransmits": 0,
+          "timeouts": 1,
+          "lost": 1,
+          "corrupted": 0,
+          "duplicated": 0,
+          "reordered": 0,
+          "discarded": 0,
+          "rejected": 0,
+          "transitions": 7,
+          "rttSamples": 0,
+          "firstOfferAt": 0,
+          "lastDeliveryAt": 0,
+          "totalTime": 0,
+          "fastRetransmitSaved": 0
+        },
+        "steps": 8,
+        "end": 1135352,
+        "paths": [
+          {
+            "host": "A",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "SYN_SENT",
+              "ESTABLISHED"
+            ]
+          },
+          {
+            "host": "A",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "LISTEN",
+              "SYN_RCVD",
+              "ESTABLISHED"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "04-normal-close",
+    "number": "4",
+    "title": "Encerramento normal",
+    "description": "Depois do handshake A fecha a conexão. B confirma o FIN, entra em CLOSE_WAIT e fecha 30 ms depois. A espera 2·MSL em TIME_WAIT (MSL = 500 ms nesta simulação).",
+    "expected": "A passa por FIN_WAIT_1, FIN_WAIT_2 e TIME_WAIT; B por CLOSE_WAIT e LAST_ACK",
+    "protocols": [
+      "tcp"
+    ],
+    "seed": 4,
+    "passed": true,
+    "checks": [
+      {
+        "title": "A visita ESTABLISHED→FIN_WAIT_1→FIN_WAIT_2→TIME_WAIT→CLOSED",
+        "passed": true,
+        "detail": "observado: CLOSED→SYN_SENT→ESTABLISHED→FIN_WAIT_1→FIN_WAIT_2→TIME_WAIT→CLOSED"
+      },
+      {
+        "title": "B visita ESTABLISHED→CLOSE_WAIT→LAST_ACK→CLOSED",
+        "passed": true,
+        "detail": "observado: CLOSED→LISTEN→SYN_RCVD→ESTABLISHED→CLOSE_WAIT→LAST_ACK→CLOSED"
+      },
+      {
+        "title": "TIME_WAIT dura exatamente 2·MSL",
+        "passed": true,
+        "detail": "observado: 1000ms (de 440ms a 1440ms)"
+      },
+      {
+        "title": "o temporizador 2·MSL de A expira",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "um FIN de cada lado",
+        "passed": true,
+        "detail": "observado: 2"
+      },
+      {
+        "title": "rejected = 0",
+        "passed": true,
+        "detail": "observado: 0"
+      }
+    ],
+    "runs": [
+      {
+        "name": "tcp",
+        "protocol": "tcp",
+        "seed": 4,
+        "stats": {
+          "offered": 0,
+          "delivered": 0,
+          "inOrder": 0,
+          "outOfOrder": 0,
+          "duplicates": 0,
+          "missing": 0,
+          "sent": 7,
+          "bytesOnWire": 140,
+          "retransmissions": 0,
+          "fastRetransmits": 0,
+          "timeouts": 0,
+          "lost": 0,
+          "corrupted": 0,
+          "duplicated": 0,
+          "reordered": 0,
+          "discarded": 0,
+          "rejected": 0,
+          "transitions": 12,
+          "rttSamples": 4,
+          "firstOfferAt": 0,
+          "lastDeliveryAt": 0,
+          "totalTime": 0,
+          "fastRetransmitSaved": 0
+        },
+        "steps": 12,
+        "end": 1440000,
+        "paths": [
+          {
+            "host": "A",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "SYN_SENT",
+              "ESTABLISHED",
+              "FIN_WAIT_1",
+              "FIN_WAIT_2",
+              "TIME_WAIT",
+              "CLOSED"
+            ]
+          },
+          {
+            "host": "A",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "LISTEN",
+              "SYN_RCVD",
+              "ESTABLISHED",
+              "CLOSE_WAIT",
+              "LAST_ACK",
+              "CLOSED"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "05-simultaneous-close",
+    "number": "5",
+    "title": "Fechamento simultâneo",
+    "description": "A e B chamam close() no mesmo instante virtual (t=400 ms). Os FINs se cruzam no canal: cada lado recebe um FIN que ainda não confirma o seu próprio FIN e vai para CLOSING.",
+    "expected": "Ambos passam por FIN_WAIT_1→CLOSING→TIME_WAIT",
+    "protocols": [
+      "tcp"
+    ],
+    "seed": 5,
+    "passed": true,
+    "checks": [
+      {
+        "title": "A visita FIN_WAIT_1→CLOSING→TIME_WAIT→CLOSED",
+        "passed": true,
+        "detail": "observado: CLOSED→SYN_SENT→ESTABLISHED→FIN_WAIT_1→CLOSING→TIME_WAIT→CLOSED"
+      },
+      {
+        "title": "B visita FIN_WAIT_1→CLOSING→TIME_WAIT→CLOSED",
+        "passed": true,
+        "detail": "observado: CLOSED→LISTEN→SYN_RCVD→ESTABLISHED→FIN_WAIT_1→CLOSING→TIME_WAIT→CLOSED"
+      },
+      {
+        "title": "ninguém passa por FIN_WAIT_2",
+        "passed": true,
+        "detail": "observado: 0"
+      },
+      {
+        "title": "A permanece em TIME_WAIT = 1000ms",
+        "passed": true,
+        "detail": "observado: 1000ms (de 500ms a 1500ms)"
+      },
+      {
+        "title": "B permanece em TIME_WAIT = 1000ms",
+        "passed": true,
+        "detail": "observado: 1000ms (de 500ms a 1500ms)"
+      },
+      {
+        "title": "rejected = 0",
+        "passed": true,
+        "detail": "observado: 0"
+      }
+    ],
+    "runs": [
+      {
+        "name": "tcp",
+        "protocol": "tcp",
+        "seed": 5,
+        "stats": {
+          "offered": 0,
+          "delivered": 0,
+          "inOrder": 0,
+          "outOfOrder": 0,
+          "duplicates": 0,
+          "missing": 0,
+          "sent": 7,
+          "bytesOnWire": 140,
+          "retransmissions": 0,
+          "fastRetransmits": 0,
+          "timeouts": 0,
+          "lost": 0,
+          "corrupted": 0,
+          "duplicated": 0,
+          "reordered": 0,
+          "discarded": 0,
+          "rejected": 0,
+          "transitions": 13,
+          "rttSamples": 4,
+          "firstOfferAt": 0,
+          "lastDeliveryAt": 0,
+          "totalTime": 0,
+          "fastRetransmitSaved": 0
+        },
+        "steps": 13,
+        "end": 1500000,
+        "paths": [
+          {
+            "host": "A",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "SYN_SENT",
+              "ESTABLISHED",
+              "FIN_WAIT_1",
+              "CLOSING",
+              "TIME_WAIT",
+              "CLOSED"
+            ]
+          },
+          {
+            "host": "A",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "LISTEN",
+              "SYN_RCVD",
+              "ESTABLISHED",
+              "FIN_WAIT_1",
+              "CLOSING",
+              "TIME_WAIT",
+              "CLOSED"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "06-fast-retransmit",
+    "number": "6",
+    "title": "Perda de um segmento de dados no meio de 10",
+    "description": "A envia 10 mensagens de 1 MSS (1000 B) e o 5º segmento de dados se perde. Os segmentos seguintes geram 3 ACKs duplicados e a máquina de congestionamento dispara a retransmissão rápida. A execução sem-fr repete tudo com a guarda fast_retransmit desligada e serve de contrafactual para medir a economia de ponta a ponta.",
+    "expected": "3 ACKs duplicados e retransmissão rápida, sem esperar o timeout",
+    "protocols": [
+      "tcp",
+      "tcp"
+    ],
+    "seed": 6,
+    "passed": true,
+    "checks": [
+      {
+        "title": "pelo menos 3 ACKs duplicados chegam a A",
+        "run": "com-fr",
+        "passed": true,
+        "detail": "observado: 4"
+      },
+      {
+        "title": "exatamente uma retransmissão rápida",
+        "run": "com-fr",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "nenhum timeout de retransmissão",
+        "run": "com-fr",
+        "passed": true,
+        "detail": "observado: 0"
+      },
+      {
+        "title": "A visita SLOW_START→FAST_RECOVERY→CONGESTION_AVOIDANCE",
+        "run": "com-fr",
+        "passed": true,
+        "detail": "observado: SLOW_START→FAST_RECOVERY→CONGESTION_AVOIDANCE"
+      },
+      {
+        "title": "a retransmissão rápida acontece antes do prazo do RTO",
+        "run": "com-fr",
+        "passed": true,
+        "detail": "observado: 103.684"
+      },
+      {
+        "title": "inOrder = 10",
+        "run": "com-fr",
+        "passed": true,
+        "detail": "observado: 10"
+      },
+      {
+        "title": "sem a guarda, só o timeout recupera a perda",
+        "run": "sem-fr",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "inOrder = 10",
+        "run": "sem-fr",
+        "passed": true,
+        "detail": "observado: 10"
+      },
+      {
+        "title": "com retransmissão rápida a transferência termina antes",
+        "run": "com-fr",
+        "passed": true,
+        "detail": "observado: 460.48"
+      }
+    ],
+    "runs": [
+      {
+        "name": "com-fr",
+        "protocol": "tcp",
+        "seed": 6,
+        "stats": {
+          "offered": 10,
+          "delivered": 10,
+          "inOrder": 10,
+          "outOfOrder": 0,
+          "duplicates": 0,
+          "missing": 0,
+          "sent": 28,
+          "bytesOnWire": 11560,
+          "retransmissions": 1,
+          "fastRetransmits": 1,
+          "timeouts": 0,
+          "lost": 1,
+          "corrupted": 0,
+          "duplicated": 0,
+          "reordered": 0,
+          "discarded": 0,
+          "rejected": 0,
+          "transitions": 43,
+          "rttSamples": 8,
+          "firstOfferAt": 95274,
+          "lastDeliveryAt": 555754,
+          "totalTime": 460480,
+          "fastRetransmitSaved": 103684
+        },
+        "steps": 34,
+        "end": 2721415,
+        "paths": [
+          {
+            "host": "A",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "SYN_SENT",
+              "ESTABLISHED",
+              "FIN_WAIT_1",
+              "FIN_WAIT_2",
+              "TIME_WAIT",
+              "CLOSED"
+            ]
+          },
+          {
+            "host": "A",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START",
+              "FAST_RECOVERY",
+              "CONGESTION_AVOIDANCE"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "LISTEN",
+              "SYN_RCVD",
+              "ESTABLISHED",
+              "CLOSE_WAIT",
+              "LAST_ACK",
+              "CLOSED"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "sem-fr",
+        "protocol": "tcp",
+        "seed": 6,
+        "stats": {
+          "offered": 10,
+          "delivered": 10,
+          "inOrder": 10,
+          "outOfOrder": 0,
+          "duplicates": 0,
+          "missing": 0,
+          "sent": 28,
+          "bytesOnWire": 11560,
+          "retransmissions": 1,
+          "fastRetransmits": 0,
+          "timeouts": 1,
+          "lost": 1,
+          "corrupted": 0,
+          "duplicated": 0,
+          "reordered": 0,
+          "discarded": 0,
+          "rejected": 0,
+          "transitions": 45,
+          "rttSamples": 8,
+          "firstOfferAt": 95274,
+          "lastDeliveryAt": 761263,
+          "totalTime": 665989,
+          "fastRetransmitSaved": 0
+        },
+        "steps": 35,
+        "end": 2921543,
+        "paths": [
+          {
+            "host": "A",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "SYN_SENT",
+              "ESTABLISHED",
+              "FIN_WAIT_1",
+              "FIN_WAIT_2",
+              "TIME_WAIT",
+              "CLOSED"
+            ]
+          },
+          {
+            "host": "A",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START",
+              "CONGESTION_AVOIDANCE"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "LISTEN",
+              "SYN_RCVD",
+              "ESTABLISHED",
+              "CLOSE_WAIT",
+              "LAST_ACK",
+              "CLOSED"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "07-closed-port",
+    "number": "7",
+    "title": "Conexão a uma porta fechada",
+    "description": "B não chama listen(). O SYN de A chega a uma porta sem socket: o demultiplexador cria um TCB transitório em CLOSED, que responde RST,ACK. A sai de SYN_SENT direto para CLOSED (conexão recusada).",
+    "expected": "Resposta RST",
+    "protocols": [
+      "tcp"
+    ],
+    "seed": 7,
+    "passed": true,
+    "checks": [
+      {
+        "title": "B responde com RST",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "#transition[host=B de=CLOSED evento=rcv.SYN ação=send(RST)] = 1",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "A percorre exatamente CLOSED→SYN_SENT→CLOSED",
+        "passed": true,
+        "detail": "observado: CLOSED→SYN_SENT→CLOSED"
+      },
+      {
+        "title": "a aplicação de A é avisada da recusa",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "nenhuma retransmissão depois do RST",
+        "passed": true,
+        "detail": "observado: 0"
+      }
+    ],
+    "runs": [
+      {
+        "name": "tcp",
+        "protocol": "tcp",
+        "seed": 7,
+        "stats": {
+          "offered": 0,
+          "delivered": 0,
+          "inOrder": 0,
+          "outOfOrder": 0,
+          "duplicates": 0,
+          "missing": 0,
+          "sent": 2,
+          "bytesOnWire": 40,
+          "retransmissions": 0,
+          "fastRetransmits": 0,
+          "timeouts": 0,
+          "lost": 0,
+          "corrupted": 0,
+          "duplicated": 0,
+          "reordered": 0,
+          "discarded": 0,
+          "rejected": 0,
+          "transitions": 3,
+          "rttSamples": 0,
+          "firstOfferAt": 0,
+          "lastDeliveryAt": 0,
+          "totalTime": 0,
+          "fastRetransmitSaved": 0
+        },
+        "steps": 3,
+        "end": 110000,
+        "paths": [
+          {
+            "host": "A",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "SYN_SENT",
+              "CLOSED"
+            ]
+          },
+          {
+            "host": "A",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "connection",
+            "states": [
+              "CLOSED"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "08-udp-loss",
+    "number": "8",
+    "title": "20 datagramas com 30% de perda",
+    "description": "A envia 20 datagramas espaçados de 10 ms por um canal com 30% de perda. O UDP não tem ACK nem temporizador: o que se perde fica perdido.",
+    "expected": "Perdidos não são recuperados e nenhuma retransmissão ocorre",
+    "protocols": [
+      "udp"
+    ],
+    "seed": 8,
+    "passed": true,
+    "checks": [
+      {
+        "title": "sent = 20",
+        "passed": true,
+        "detail": "observado: 20"
+      },
+      {
+        "title": "lost ≥ 1",
+        "passed": true,
+        "detail": "observado: 4"
+      },
+      {
+        "title": "cada perda vira uma mensagem a menos na aplicação",
+        "passed": true,
+        "detail": "observado: 4"
+      },
+      {
+        "title": "retransmissions = 0",
+        "passed": true,
+        "detail": "observado: 0"
+      },
+      {
+        "title": "timeouts = 0",
+        "passed": true,
+        "detail": "observado: 0"
+      },
+      {
+        "title": "B nunca envia nada de volta",
+        "passed": true,
+        "detail": "observado: 0"
+      }
+    ],
+    "runs": [
+      {
+        "name": "udp",
+        "protocol": "udp",
+        "seed": 8,
+        "stats": {
+          "offered": 20,
+          "delivered": 16,
+          "inOrder": 16,
+          "outOfOrder": 0,
+          "duplicates": 0,
+          "missing": 4,
+          "sent": 20,
+          "bytesOnWire": 4160,
+          "retransmissions": 0,
+          "fastRetransmits": 0,
+          "timeouts": 0,
+          "lost": 4,
+          "corrupted": 0,
+          "duplicated": 0,
+          "reordered": 0,
+          "discarded": 0,
+          "rejected": 0,
+          "transitions": 36,
+          "rttSamples": 0,
+          "firstOfferAt": 0,
+          "lastDeliveryAt": 237982,
+          "totalTime": 237982,
+          "fastRetransmitSaved": 0
+        },
+        "steps": 41,
+        "end": 237982,
+        "paths": [
+          {
+            "host": "A",
+            "machine": "socket",
+            "states": [
+              "READY"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "socket",
+            "states": [
+              "READY"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "08b-udp-dup-reorder",
+    "number": "8b",
+    "title": "Duplicação e reordenação chegam à aplicação",
+    "description": "Complemento do item 4.2: com duplicação e reordenação no canal, o receptor UDP entrega à aplicação cópias repetidas e mensagens fora de ordem, sem qualquer correção.",
+    "expected": "Duplicados e fora de ordem são entregues como chegaram",
+    "protocols": [
+      "udp"
+    ],
+    "seed": 9,
+    "passed": true,
+    "checks": [
+      {
+        "title": "duplicates ≥ 1",
+        "passed": true,
+        "detail": "observado: 4"
+      },
+      {
+        "title": "outOfOrder ≥ 1",
+        "passed": true,
+        "detail": "observado: 2"
+      },
+      {
+        "title": "retransmissions = 0",
+        "passed": true,
+        "detail": "observado: 0"
+      },
+      {
+        "title": "toda duplicata do canal chega à aplicação",
+        "passed": true,
+        "detail": "observado: 4"
+      }
+    ],
+    "runs": [
+      {
+        "name": "udp",
+        "protocol": "udp",
+        "seed": 9,
+        "stats": {
+          "offered": 20,
+          "delivered": 17,
+          "inOrder": 15,
+          "outOfOrder": 2,
+          "duplicates": 4,
+          "missing": 3,
+          "sent": 20,
+          "bytesOnWire": 4160,
+          "retransmissions": 0,
+          "fastRetransmits": 0,
+          "timeouts": 0,
+          "lost": 3,
+          "corrupted": 0,
+          "duplicated": 4,
+          "reordered": 3,
+          "discarded": 0,
+          "rejected": 0,
+          "transitions": 41,
+          "rttSamples": 0,
+          "firstOfferAt": 0,
+          "lastDeliveryAt": 279159,
+          "totalTime": 279159,
+          "fastRetransmitSaved": 0
+        },
+        "steps": 45,
+        "end": 279159,
+        "paths": [
+          {
+            "host": "A",
+            "machine": "socket",
+            "states": [
+              "READY"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "socket",
+            "states": [
+              "READY"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "09-udp-checksum",
+    "number": "9",
+    "title": "Datagrama com checksum corrompido",
+    "description": "O canal troca um bit do 3º datagrama de A. O receptor recalcula a soma em complemento de 1 sobre pseudo-cabeçalho, cabeçalho e dados, percebe a divergência e descarta o datagrama em silêncio.",
+    "expected": "Descartado pelo receptor, sem notificação",
+    "protocols": [
+      "udp"
+    ],
+    "seed": 10,
+    "passed": true,
+    "checks": [
+      {
+        "title": "corrupted = 1",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "B descarta por checksum",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "#transition[host=B evento=rcv ação=discard(checksum)] = 1",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "delivered = 4",
+        "passed": true,
+        "detail": "observado: 4"
+      },
+      {
+        "title": "o remetente não é notificado",
+        "passed": true,
+        "detail": "observado: 0"
+      }
+    ],
+    "runs": [
+      {
+        "name": "udp",
+        "protocol": "udp",
+        "seed": 10,
+        "stats": {
+          "offered": 5,
+          "delivered": 4,
+          "inOrder": 4,
+          "outOfOrder": 0,
+          "duplicates": 0,
+          "missing": 1,
+          "sent": 5,
+          "bytesOnWire": 1040,
+          "retransmissions": 0,
+          "fastRetransmits": 0,
+          "timeouts": 0,
+          "lost": 0,
+          "corrupted": 1,
+          "duplicated": 0,
+          "reordered": 0,
+          "discarded": 1,
+          "rejected": 0,
+          "transitions": 10,
+          "rttSamples": 0,
+          "firstOfferAt": 0,
+          "lastDeliveryAt": 86970,
+          "totalTime": 86970,
+          "fastRetransmitSaved": 0
+        },
+        "steps": 11,
+        "end": 86970,
+        "paths": [
+          {
+            "host": "A",
+            "machine": "socket",
+            "states": [
+              "READY"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "socket",
+            "states": [
+              "READY"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "10-udp-vs-tcp",
+    "number": "10",
+    "title": "Mesma carga, mesmo canal ruidoso",
+    "description": "30 mensagens de 500 B pelo mesmo canal (15% de perda, 5% de corrupção, 5% de duplicação, 10% de reordenação, atraso de 30 a 70 ms) e a mesma seed. Cada componente aleatório do canal tem seu próprio gerador derivado da seed.",
+    "expected": "Relatório comparando entregues, perdidos, duplicados, em ordem e tempo total",
+    "protocols": [
+      "udp",
+      "tcp"
+    ],
+    "seed": 17,
+    "passed": true,
+    "checks": [
+      {
+        "title": "delivered = 30",
+        "run": "tcp",
+        "passed": true,
+        "detail": "observado: 30"
+      },
+      {
+        "title": "duplicates = 0",
+        "run": "tcp",
+        "passed": true,
+        "detail": "observado: 0"
+      },
+      {
+        "title": "outOfOrder = 0",
+        "run": "tcp",
+        "passed": true,
+        "detail": "observado: 0"
+      },
+      {
+        "title": "missing ≥ 1",
+        "run": "udp",
+        "passed": true,
+        "detail": "observado: 5"
+      },
+      {
+        "title": "retransmissions = 0",
+        "run": "udp",
+        "passed": true,
+        "detail": "observado: 0"
+      },
+      {
+        "title": "duplicatas do canal chegam à aplicação UDP",
+        "run": "udp",
+        "passed": true,
+        "detail": "observado: 2"
+      },
+      {
+        "title": "a aplicação UDP vê mensagens fora de ordem",
+        "run": "udp",
+        "passed": true,
+        "detail": "observado: 3"
+      },
+      {
+        "title": "UDP entrega menos que TCP",
+        "run": "udp",
+        "passed": true,
+        "detail": "observado: 25"
+      },
+      {
+        "title": "TCP paga com mais segmentos no fio",
+        "run": "tcp",
+        "passed": true,
+        "detail": "observado: 46"
+      }
+    ],
+    "runs": [
+      {
+        "name": "udp",
+        "protocol": "udp",
+        "seed": 17,
+        "stats": {
+          "offered": 30,
+          "delivered": 25,
+          "inOrder": 22,
+          "outOfOrder": 3,
+          "duplicates": 2,
+          "missing": 5,
+          "sent": 30,
+          "bytesOnWire": 15240,
+          "retransmissions": 0,
+          "fastRetransmits": 0,
+          "timeouts": 0,
+          "lost": 2,
+          "corrupted": 3,
+          "duplicated": 2,
+          "reordered": 3,
+          "discarded": 3,
+          "rejected": 0,
+          "transitions": 60,
+          "rttSamples": 0,
+          "firstOfferAt": 0,
+          "lastDeliveryAt": 361561,
+          "totalTime": 361561,
+          "fastRetransmitSaved": 0
+        },
+        "steps": 63,
+        "end": 361561,
+        "paths": [
+          {
+            "host": "A",
+            "machine": "socket",
+            "states": [
+              "READY"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "socket",
+            "states": [
+              "READY"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "tcp",
+        "protocol": "tcp",
+        "seed": 17,
+        "stats": {
+          "offered": 30,
+          "delivered": 30,
+          "inOrder": 30,
+          "outOfOrder": 0,
+          "duplicates": 0,
+          "missing": 0,
+          "sent": 46,
+          "bytesOnWire": 21920,
+          "retransmissions": 7,
+          "fastRetransmits": 1,
+          "timeouts": 6,
+          "lost": 5,
+          "corrupted": 3,
+          "duplicated": 2,
+          "reordered": 6,
+          "discarded": 5,
+          "rejected": 0,
+          "transitions": 74,
+          "rttSamples": 8,
+          "firstOfferAt": 115319,
+          "lastDeliveryAt": 2294070,
+          "totalTime": 2178751,
+          "fastRetransmitSaved": 22966
+        },
+        "steps": 60,
+        "end": 5361750,
+        "paths": [
+          {
+            "host": "A",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "SYN_SENT",
+              "ESTABLISHED",
+              "FIN_WAIT_1",
+              "FIN_WAIT_2",
+              "TIME_WAIT",
+              "CLOSED"
+            ]
+          },
+          {
+            "host": "A",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START",
+              "CONGESTION_AVOIDANCE",
+              "SLOW_START",
+              "CONGESTION_AVOIDANCE",
+              "FAST_RECOVERY",
+              "CONGESTION_AVOIDANCE",
+              "SLOW_START",
+              "CONGESTION_AVOIDANCE",
+              "SLOW_START"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "LISTEN",
+              "SYN_RCVD",
+              "ESTABLISHED",
+              "CLOSE_WAIT",
+              "LAST_ACK",
+              "CLOSED"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "11-no-time-wait",
+    "number": "11",
+    "title": "Sem TIME_WAIT, o último ACK perdido vira RST",
+    "description": "Cenário extra para a pergunta 1. O encerramento do cenário 4 é repetido, mas o ACK final de A (2º ACK puro) se perde. B, em LAST_ACK, reenvia o FIN após o RTO. A execução sem-tw usa a variante tcp-sem-time-wait.json, idêntica exceto pela remoção do estado TIME_WAIT.",
+    "expected": "Com TIME_WAIT, A reconfirma o FIN repetido; sem TIME_WAIT, A responde RST e B aborta",
+    "protocols": [
+      "tcp",
+      "tcp-sem-time-wait"
+    ],
+    "seed": 11,
+    "passed": true,
+    "checks": [
+      {
+        "title": "B reenvia o FIN",
+        "run": "com-tw",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "A, ainda em TIME_WAIT, confirma de novo",
+        "run": "com-tw",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "B visita CLOSE_WAIT→LAST_ACK→CLOSED",
+        "run": "com-tw",
+        "passed": true,
+        "detail": "observado: CLOSED→LISTEN→SYN_RCVD→ESTABLISHED→CLOSE_WAIT→LAST_ACK→CLOSED"
+      },
+      {
+        "title": "B fecha de forma ordenada",
+        "run": "com-tw",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "#send[flags=RST] = 0",
+        "run": "com-tw",
+        "passed": true,
+        "detail": "observado: 0"
+      },
+      {
+        "title": "A já está em CLOSED e responde RST",
+        "run": "sem-tw",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "B aborta em vez de fechar",
+        "run": "sem-tw",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "#app[host=B evento=reset] = 1",
+        "run": "sem-tw",
+        "passed": true,
+        "detail": "observado: 1"
+      }
+    ],
+    "runs": [
+      {
+        "name": "com-tw",
+        "protocol": "tcp",
+        "seed": 11,
+        "stats": {
+          "offered": 0,
+          "delivered": 0,
+          "inOrder": 0,
+          "outOfOrder": 0,
+          "duplicates": 0,
+          "missing": 0,
+          "sent": 9,
+          "bytesOnWire": 180,
+          "retransmissions": 1,
+          "fastRetransmits": 0,
+          "timeouts": 1,
+          "lost": 1,
+          "corrupted": 0,
+          "duplicated": 0,
+          "reordered": 0,
+          "discarded": 0,
+          "rejected": 0,
+          "transitions": 14,
+          "rttSamples": 3,
+          "firstOfferAt": 0,
+          "lastDeliveryAt": 0,
+          "totalTime": 0,
+          "fastRetransmitSaved": 0
+        },
+        "steps": 15,
+        "end": 1740000,
+        "paths": [
+          {
+            "host": "A",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "SYN_SENT",
+              "ESTABLISHED",
+              "FIN_WAIT_1",
+              "FIN_WAIT_2",
+              "TIME_WAIT",
+              "CLOSED"
+            ]
+          },
+          {
+            "host": "A",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "LISTEN",
+              "SYN_RCVD",
+              "ESTABLISHED",
+              "CLOSE_WAIT",
+              "LAST_ACK",
+              "CLOSED"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "sem-tw",
+        "protocol": "tcp-sem-time-wait",
+        "seed": 11,
+        "stats": {
+          "offered": 0,
+          "delivered": 0,
+          "inOrder": 0,
+          "outOfOrder": 0,
+          "duplicates": 0,
+          "missing": 0,
+          "sent": 9,
+          "bytesOnWire": 180,
+          "retransmissions": 1,
+          "fastRetransmits": 0,
+          "timeouts": 1,
+          "lost": 1,
+          "corrupted": 0,
+          "duplicated": 0,
+          "reordered": 0,
+          "discarded": 0,
+          "rejected": 0,
+          "transitions": 13,
+          "rttSamples": 3,
+          "firstOfferAt": 0,
+          "lastDeliveryAt": 0,
+          "totalTime": 0,
+          "fastRetransmitSaved": 0
+        },
+        "steps": 14,
+        "end": 790000,
+        "paths": [
+          {
+            "host": "A",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "SYN_SENT",
+              "ESTABLISHED",
+              "FIN_WAIT_1",
+              "FIN_WAIT_2",
+              "CLOSED"
+            ]
+          },
+          {
+            "host": "A",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "connection",
+            "states": [
+              "CLOSED",
+              "LISTEN",
+              "SYN_RCVD",
+              "ESTABLISHED",
+              "CLOSE_WAIT",
+              "LAST_ACK",
+              "CLOSED"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "congestion",
+            "states": [
+              "SLOW_START"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "12-rdt21",
+    "number": "12",
+    "title": "rdt 2.1 sobre canal com erros de bits",
+    "description": "Prova de extensibilidade: rdt-2.1.json roda com o mesmo motor e o mesmo canal, sem código específico da versão. 30% dos pacotes chegam corrompidos.",
+    "expected": "Todas as mensagens entregues uma vez, em ordem, só com NAK e reenvio",
+    "protocols": [
+      "rdt-2.1"
+    ],
+    "seed": 12,
+    "passed": true,
+    "checks": [
+      {
+        "title": "inOrder = 10",
+        "passed": true,
+        "detail": "observado: 10"
+      },
+      {
+        "title": "duplicates = 0",
+        "passed": true,
+        "detail": "observado: 0"
+      },
+      {
+        "title": "#send[host=B flags exatas=NAK] ≥ 1",
+        "passed": true,
+        "detail": "observado: 4"
+      },
+      {
+        "title": "retransmissions ≥ 1",
+        "passed": true,
+        "detail": "observado: 8"
+      }
+    ],
+    "runs": [
+      {
+        "name": "rdt-2.1",
+        "protocol": "rdt-2.1",
+        "seed": 12,
+        "stats": {
+          "offered": 10,
+          "delivered": 10,
+          "inOrder": 10,
+          "outOfOrder": 0,
+          "duplicates": 0,
+          "missing": 0,
+          "sent": 36,
+          "bytesOnWire": 1296,
+          "retransmissions": 8,
+          "fastRetransmits": 0,
+          "timeouts": 0,
+          "lost": 0,
+          "corrupted": 10,
+          "duplicated": 0,
+          "reordered": 0,
+          "discarded": 0,
+          "rejected": 0,
+          "transitions": 46,
+          "rttSamples": 0,
+          "firstOfferAt": 2000,
+          "lastDeliveryAt": 833985,
+          "totalTime": 831985,
+          "fastRetransmitSaved": 0
+        },
+        "steps": 47,
+        "end": 899703,
+        "paths": [
+          {
+            "host": "A",
+            "machine": "sender",
+            "states": [
+              "WAIT_CALL_0",
+              "WAIT_ACK_0",
+              "WAIT_CALL_1",
+              "WAIT_ACK_1",
+              "WAIT_CALL_0",
+              "WAIT_ACK_0",
+              "WAIT_CALL_1",
+              "WAIT_ACK_1",
+              "WAIT_CALL_0",
+              "WAIT_ACK_0",
+              "WAIT_CALL_1",
+              "WAIT_ACK_1",
+              "WAIT_CALL_0",
+              "WAIT_ACK_0",
+              "WAIT_CALL_1",
+              "WAIT_ACK_1",
+              "WAIT_CALL_0",
+              "WAIT_ACK_0",
+              "WAIT_CALL_1",
+              "WAIT_ACK_1",
+              "WAIT_CALL_0"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "receiver",
+            "states": [
+              "WAIT_0",
+              "WAIT_1",
+              "WAIT_0",
+              "WAIT_1",
+              "WAIT_0",
+              "WAIT_1",
+              "WAIT_0",
+              "WAIT_1",
+              "WAIT_0",
+              "WAIT_1",
+              "WAIT_0"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "13-rdt30",
+    "number": "13",
+    "title": "rdt 3.0 sobre canal com perdas",
+    "description": "rdt-3.0.json foi escrito só em JSON, reaproveitando o vocabulário do rdt 2.1 (make_pkt, udt_send, start_timer…). 20% de perda e 10% de corrupção.",
+    "expected": "Temporizador recupera perdas sem NAK",
+    "protocols": [
+      "rdt-3.0"
+    ],
+    "seed": 13,
+    "passed": true,
+    "checks": [
+      {
+        "title": "inOrder = 10",
+        "passed": true,
+        "detail": "observado: 10"
+      },
+      {
+        "title": "duplicates = 0",
+        "passed": true,
+        "detail": "observado: 0"
+      },
+      {
+        "title": "timeouts ≥ 1",
+        "passed": true,
+        "detail": "observado: 1"
+      },
+      {
+        "title": "#send[flags exatas=NAK] = 0",
+        "passed": true,
+        "detail": "observado: 0"
+      }
+    ],
+    "runs": [
+      {
+        "name": "rdt-3.0",
+        "protocol": "rdt-3.0",
+        "seed": 13,
+        "stats": {
+          "offered": 10,
+          "delivered": 10,
+          "inOrder": 10,
+          "outOfOrder": 0,
+          "duplicates": 0,
+          "missing": 0,
+          "sent": 22,
+          "bytesOnWire": 792,
+          "retransmissions": 2,
+          "fastRetransmits": 0,
+          "timeouts": 1,
+          "lost": 1,
+          "corrupted": 0,
+          "duplicated": 0,
+          "reordered": 0,
+          "discarded": 0,
+          "rejected": 0,
+          "transitions": 32,
+          "rttSamples": 0,
+          "firstOfferAt": 2000,
+          "lastDeliveryAt": 731329,
+          "totalTime": 729329,
+          "fastRetransmitSaved": 0
+        },
+        "steps": 34,
+        "end": 760024,
+        "paths": [
+          {
+            "host": "A",
+            "machine": "sender",
+            "states": [
+              "WAIT_CALL_0",
+              "WAIT_ACK_0",
+              "WAIT_CALL_1",
+              "WAIT_ACK_1",
+              "WAIT_CALL_0",
+              "WAIT_ACK_0",
+              "WAIT_CALL_1",
+              "WAIT_ACK_1",
+              "WAIT_CALL_0",
+              "WAIT_ACK_0",
+              "WAIT_CALL_1",
+              "WAIT_ACK_1",
+              "WAIT_CALL_0",
+              "WAIT_ACK_0",
+              "WAIT_CALL_1",
+              "WAIT_ACK_1",
+              "WAIT_CALL_0",
+              "WAIT_ACK_0",
+              "WAIT_CALL_1",
+              "WAIT_ACK_1",
+              "WAIT_CALL_0"
+            ]
+          },
+          {
+            "host": "B",
+            "machine": "receiver",
+            "states": [
+              "WAIT_0",
+              "WAIT_1",
+              "WAIT_0",
+              "WAIT_1",
+              "WAIT_0",
+              "WAIT_1",
+              "WAIT_0",
+              "WAIT_1",
+              "WAIT_0",
+              "WAIT_1",
+              "WAIT_0"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

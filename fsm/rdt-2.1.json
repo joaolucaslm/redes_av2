@@ -1,0 +1,107 @@
+{
+  "protocol": "rdt-2.1",
+  "family": "rdt",
+  "title": "rdt 2.1",
+  "source": "Kurose & Ross, figuras 3.11 e 3.12",
+  "summary": "Pare-e-espere sobre canal com erros de bits: números de sequência 0/1 e ACK/NAK com checksum. Não tolera perda: se um pacote some, o remetente espera para sempre.",
+  "machines": [
+    {
+      "name": "sender",
+      "title": "rdt 2.1 · remetente",
+      "initial": "WAIT_CALL_0",
+      "width": 680,
+      "height": 460,
+      "states": [
+        { "id": "WAIT_CALL_0", "label": "Espera chamada 0 de cima", "x": 170, "y": 110 },
+        { "id": "WAIT_ACK_0", "label": "Espera ACK ou NAK 0", "x": 510, "y": 110, "loop": "right" },
+        { "id": "WAIT_CALL_1", "label": "Espera chamada 1 de cima", "x": 510, "y": 350 },
+        { "id": "WAIT_ACK_1", "label": "Espera ACK ou NAK 1", "x": 170, "y": 350, "loop": "left" }
+      ],
+      "transitions": [
+        {
+          "from": "WAIT_CALL_0", "event": "rdt_send",
+          "actions": ["make_pkt(0)", "udt_send"],
+          "to": "WAIT_ACK_0",
+          "label": { "event": "rdt_send(data)", "action": "sndpkt = make_pkt(0, data, checksum)\nudt_send(sndpkt)" }
+        },
+        {
+          "from": "WAIT_ACK_0", "event": "rdt_rcv", "guard": "corrupt || isNAK",
+          "actions": ["udt_send"],
+          "to": "WAIT_ACK_0", "loop": "right",
+          "label": { "event": "rdt_rcv(rcvpkt) && (corrupt(rcvpkt) || isNAK(rcvpkt))", "action": "udt_send(sndpkt)" }
+        },
+        {
+          "from": "WAIT_ACK_0", "event": "rdt_rcv", "guard": "notcorrupt && isACK",
+          "to": "WAIT_CALL_1",
+          "label": { "event": "rdt_rcv(rcvpkt) && notcorrupt(rcvpkt) && isACK(rcvpkt)", "action": "Λ" }
+        },
+        {
+          "from": "WAIT_CALL_1", "event": "rdt_send",
+          "actions": ["make_pkt(1)", "udt_send"],
+          "to": "WAIT_ACK_1",
+          "label": { "event": "rdt_send(data)", "action": "sndpkt = make_pkt(1, data, checksum)\nudt_send(sndpkt)" }
+        },
+        {
+          "from": "WAIT_ACK_1", "event": "rdt_rcv", "guard": "corrupt || isNAK",
+          "actions": ["udt_send"],
+          "to": "WAIT_ACK_1", "loop": "left",
+          "label": { "event": "rdt_rcv(rcvpkt) && (corrupt(rcvpkt) || isNAK(rcvpkt))", "action": "udt_send(sndpkt)" }
+        },
+        {
+          "from": "WAIT_ACK_1", "event": "rdt_rcv", "guard": "notcorrupt && isACK",
+          "to": "WAIT_CALL_0",
+          "label": { "event": "rdt_rcv(rcvpkt) && notcorrupt(rcvpkt) && isACK(rcvpkt)", "action": "Λ" }
+        }
+      ]
+    },
+    {
+      "name": "receiver",
+      "title": "rdt 2.1 · receptor",
+      "initial": "WAIT_0",
+      "width": 680,
+      "height": 340,
+      "states": [
+        { "id": "WAIT_0", "label": "Espera 0 de baixo", "x": 190, "y": 170, "loop": "left" },
+        { "id": "WAIT_1", "label": "Espera 1 de baixo", "x": 490, "y": 170, "loop": "right" }
+      ],
+      "transitions": [
+        {
+          "from": "WAIT_0", "event": "rdt_rcv", "guard": "notcorrupt && has_seq0",
+          "actions": ["extract", "deliver_data", "make_pkt(ACK)", "udt_send"],
+          "to": "WAIT_1", "bend": -0.25,
+          "label": { "event": "rdt_rcv(rcvpkt) && notcorrupt(rcvpkt) && has_seq0(rcvpkt)", "action": "extract; deliver_data\nsndpkt = make_pkt(ACK, chksum); udt_send" }
+        },
+        {
+          "from": "WAIT_0", "event": "rdt_rcv", "guard": "corrupt",
+          "actions": ["make_pkt(NAK)", "udt_send"],
+          "to": "WAIT_0", "loop": "left",
+          "label": { "event": "rdt_rcv(rcvpkt) && corrupt(rcvpkt)", "action": "sndpkt = make_pkt(NAK, chksum)\nudt_send(sndpkt)" }
+        },
+        {
+          "from": "WAIT_0", "event": "rdt_rcv", "guard": "notcorrupt && has_seq1",
+          "actions": ["make_pkt(ACK)", "udt_send"],
+          "to": "WAIT_0", "loop": "bottom",
+          "label": { "event": "rdt_rcv(rcvpkt) && notcorrupt(rcvpkt) && has_seq1(rcvpkt)", "action": "sndpkt = make_pkt(ACK, chksum)\nudt_send(sndpkt)" }
+        },
+        {
+          "from": "WAIT_1", "event": "rdt_rcv", "guard": "notcorrupt && has_seq1",
+          "actions": ["extract", "deliver_data", "make_pkt(ACK)", "udt_send"],
+          "to": "WAIT_0", "bend": -0.25,
+          "label": { "event": "rdt_rcv(rcvpkt) && notcorrupt(rcvpkt) && has_seq1(rcvpkt)", "action": "extract; deliver_data\nsndpkt = make_pkt(ACK, chksum); udt_send" }
+        },
+        {
+          "from": "WAIT_1", "event": "rdt_rcv", "guard": "corrupt",
+          "actions": ["make_pkt(NAK)", "udt_send"],
+          "to": "WAIT_1", "loop": "right",
+          "label": { "event": "rdt_rcv(rcvpkt) && corrupt(rcvpkt)", "action": "sndpkt = make_pkt(NAK, chksum)\nudt_send(sndpkt)" }
+        },
+        {
+          "from": "WAIT_1", "event": "rdt_rcv", "guard": "notcorrupt && has_seq0",
+          "actions": ["make_pkt(ACK)", "udt_send"],
+          "to": "WAIT_1", "loop": "bottom",
+          "label": { "event": "rdt_rcv(rcvpkt) && notcorrupt(rcvpkt) && has_seq0(rcvpkt)", "action": "sndpkt = make_pkt(ACK, chksum)\nudt_send(sndpkt)" }
+        }
+      ]
+    }
+  ]
+}

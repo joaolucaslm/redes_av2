@@ -1,0 +1,24 @@
+{
+  "id": "03-synack-loss",
+  "number": "3",
+  "title": "Perda do SYN-ACK",
+  "expected": "Cliente retransmite o SYN; servidor reenvia o SYN-ACK",
+  "description": "O primeiro SYN-ACK de B se perde. A continua em SYN_SENT até o RTO expirar e reenviar o SYN; B, em SYN_RCVD, recebe o SYN repetido e reenvia o SYN-ACK.",
+  "protocol": "tcp",
+  "seed": 3,
+  "screenshot": true,
+  "channel": { "delayMin": "40ms", "delayMax": "60ms" },
+  "faults": [ { "action": "drop", "match": { "from": "B", "exactFlags": "SYN|ACK" }, "nth": 1 } ],
+  "script": [
+    { "at": "0ms", "host": "B", "do": "listen" },
+    { "at": "10ms", "host": "A", "do": "connect" }
+  ],
+  "expect": [
+    { "title": "o SYN-ACK original se perde", "count": { "kind": "loss", "host": "B", "exactFlags": "SYN|ACK" }, "eq": 1 },
+    { "title": "cliente retransmite o SYN", "count": { "kind": "send", "host": "A", "exactFlags": "SYN", "retransmission": true }, "atLeast": 1 },
+    { "title": "servidor reenvia o SYN-ACK", "count": { "kind": "send", "host": "B", "exactFlags": "SYN|ACK", "retransmission": true }, "atLeast": 1 },
+    { "title": "B reage ao SYN repetido em SYN_RCVD", "count": { "kind": "transition", "host": "B", "from": "SYN_RCVD", "event": "rcv.SYN", "to": "SYN_RCVD" }, "eq": 1 },
+    { "visits": { "host": "A", "states": ["CLOSED", "SYN_SENT", "ESTABLISHED"], "exact": true } },
+    { "visits": { "host": "B", "states": ["LISTEN", "SYN_RCVD", "ESTABLISHED"] } }
+  ]
+}

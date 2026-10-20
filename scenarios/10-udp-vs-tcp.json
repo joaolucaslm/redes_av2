@@ -1,0 +1,25 @@
+{
+  "id": "10-udp-vs-tcp",
+  "number": "10",
+  "title": "Mesma carga, mesmo canal ruidoso",
+  "expected": "Relatório comparando entregues, perdidos, duplicados, em ordem e tempo total",
+  "description": "30 mensagens de 500 B pelo mesmo canal (15% de perda, 5% de corrupção, 5% de duplicação, 10% de reordenação, atraso de 30 a 70 ms) e a mesma seed. Cada componente aleatório do canal tem seu próprio gerador derivado da seed.",
+  "seed": 17,
+  "channel": { "loss": 0.15, "corrupt": 0.05, "duplicate": 0.05, "reorder": 0.1, "reorderLag": "80ms", "delayMin": "30ms", "delayMax": "70ms" },
+  "runs": [
+    { "name": "udp", "protocol": "udp" },
+    { "name": "tcp", "protocol": "tcp" }
+  ],
+  "workload": { "messages": 30, "size": 500, "interval": "10ms" },
+  "expect": [
+    { "run": "tcp", "metric": { "name": "delivered", "eq": 30 } },
+    { "run": "tcp", "metric": { "name": "duplicates", "eq": 0 } },
+    { "run": "tcp", "metric": { "name": "outOfOrder", "eq": 0 } },
+    { "run": "udp", "metric": { "name": "missing", "min": 1 } },
+    { "run": "udp", "metric": { "name": "retransmissions", "eq": 0 } },
+    { "run": "udp", "title": "duplicatas do canal chegam à aplicação UDP", "metric": { "name": "duplicates", "min": 1 } },
+    { "run": "udp", "title": "a aplicação UDP vê mensagens fora de ordem", "metric": { "name": "outOfOrder", "min": 1 } },
+    { "run": "udp", "title": "UDP entrega menos que TCP", "metric": { "name": "delivered", "below": "tcp:delivered" } },
+    { "run": "tcp", "title": "TCP paga com mais segmentos no fio", "metric": { "name": "sent", "above": "udp:sent" } }
+  ]
+}

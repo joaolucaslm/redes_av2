@@ -1,0 +1,19 @@
+{
+  "id": "08-udp-loss",
+  "number": "8",
+  "title": "20 datagramas com 30% de perda",
+  "expected": "Perdidos não são recuperados e nenhuma retransmissão ocorre",
+  "description": "A envia 20 datagramas espaçados de 10 ms por um canal com 30% de perda. O UDP não tem ACK nem temporizador: o que se perde fica perdido.",
+  "protocol": "udp",
+  "seed": 8,
+  "channel": { "loss": 0.3, "delayMin": "40ms", "delayMax": "60ms" },
+  "workload": { "messages": 20, "size": 200, "interval": "10ms" },
+  "expect": [
+    { "metric": { "name": "sent", "eq": 20 } },
+    { "metric": { "name": "lost", "min": 1 } },
+    { "title": "cada perda vira uma mensagem a menos na aplicação", "metric": { "name": "missing", "sameAs": "lost" } },
+    { "metric": { "name": "retransmissions", "eq": 0 } },
+    { "metric": { "name": "timeouts", "eq": 0 } },
+    { "title": "B nunca envia nada de volta", "count": { "kind": "send", "host": "B" }, "eq": 0 }
+  ]
+}

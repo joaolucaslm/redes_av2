@@ -1,5 +1,7 @@
 # Bancada — analisador de FSMs de transporte (UDP × TCP)
 
+**Vídeo explicação:** https://youtu.be/fmuEUq56PDY
+
 Simulador desktop que **executa, visualiza e testa** as máquinas de estados do UDP e do TCP (capítulo 3 de Kurose & Ross) sobre um canal com falhas configuráveis. Ele verifica automaticamente se cada FSM se comporta como o livro prevê. Trabalho Prático 2 de Redes Convergentes (Unifor).
 
 - **Núcleo em Go puro**, determinístico e sem relógio real. Roda sozinho em `go test` e numa CLI.
